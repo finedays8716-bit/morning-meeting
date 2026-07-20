@@ -169,8 +169,22 @@ async function fetchAir(region: string, key: string) {
   if (resultCode !== "00") throw new Error(data?.response?.header?.resultMsg || "에어코리아 인증키를 확인해주세요.");
   const rawItems = data?.response?.body?.items || [];
   const items: AirItem[] = Array.isArray(rawItems) ? rawItems : [rawItems];
-  const preferred = sidoName === "인천" && /서해구|서구|청라/.test(region)
-    ? ["청라", "석남", "검단", "연희"]
+  const preferred = sidoName === "인천"
+    ? /제물포/.test(region) ? ["신흥", "송현", "송림"]
+      : /영종/.test(region) ? ["운서", "서해"]
+      : /미추홀/.test(region) ? ["숭의", "주안", "석바위"]
+      : /연수/.test(region) ? ["동춘", "송도", "아암"]
+      : /남동/.test(region) ? ["구월동", "서창", "논현", "남동", "고잔"]
+      : /부평/.test(region) ? ["삼산", "부평", "갈산"]
+      : /계양/.test(region) ? ["계산", "효성", "임학"]
+      : /서해/.test(region) ? ["청라", "연희", "석남", "중봉"]
+      : /검단/.test(region) ? ["검단", "원당"]
+      : /강화군 북부/.test(region) ? ["송해", "길상"]
+      : /강화군 남부/.test(region) ? ["길상", "송해"]
+      : /옹진군 영흥|옹진군 덕적/.test(region) ? ["영흥"]
+      : /옹진군 백령|옹진군 연평/.test(region) ? ["백령도", "영흥"]
+      : /옹진군 북도/.test(region) ? ["운서", "영흥"]
+      : []
     : [];
   const usable = items.filter((item) => toNumber(item.pm10Value) !== null || toNumber(item.pm25Value) !== null);
   const selected = preferred.map((name) => usable.find((item) => item.stationName?.includes(name))).find(Boolean) || usable[0];

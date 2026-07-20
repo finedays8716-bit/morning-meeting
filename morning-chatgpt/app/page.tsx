@@ -223,6 +223,25 @@ const starterScheduleCards: ScheduleCard[] = [
 
 const cardIcons = ["🎒", "🧸", "🥛", "🍎", "✨", "🏠", "🚌", "🚨", "💬", "📚", "🌳", "🎨", "🎵", "🍚", "🌙", "🧩", "🏃", "🧼", "🎂", "🌱", "⭐"];
 
+const locationPresets: LocationSettings[] = [
+  { name: "인천 제물포구", latitude: 37.4738, longitude: 126.6432, source: "manual" },
+  { name: "인천 영종구", latitude: 37.4936, longitude: 126.53, source: "manual" },
+  { name: "인천 미추홀구", latitude: 37.4636, longitude: 126.65, source: "manual" },
+  { name: "인천 연수구", latitude: 37.4102, longitude: 126.678, source: "manual" },
+  { name: "인천 남동구", latitude: 37.4473, longitude: 126.731, source: "manual" },
+  { name: "인천 부평구", latitude: 37.507, longitude: 126.7218, source: "manual" },
+  { name: "인천 계양구", latitude: 37.537, longitude: 126.7378, source: "manual" },
+  { name: "인천 서해구", latitude: 37.5291606, longitude: 126.6375176, source: "manual" },
+  { name: "인천 검단구", latitude: 37.602, longitude: 126.657, source: "manual" },
+  { name: "인천 강화군 북부", latitude: 37.77, longitude: 126.46, source: "manual" },
+  { name: "인천 강화군 남부", latitude: 37.64, longitude: 126.49, source: "manual" },
+  { name: "인천 옹진군 북도", latitude: 37.532, longitude: 126.43, source: "manual" },
+  { name: "인천 옹진군 영흥", latitude: 37.255, longitude: 126.483, source: "manual" },
+  { name: "인천 옹진군 덕적", latitude: 37.23, longitude: 126.15, source: "manual" },
+  { name: "인천 옹진군 연평", latitude: 37.66, longitude: 125.7, source: "manual" },
+  { name: "인천 옹진군 백령·대청", latitude: 37.97, longitude: 124.72, source: "manual" },
+];
+
 function TeacherSettings({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<"location" | "helpers" | "schedule" | "api">("location");
   const [location, setLocation] = useState<LocationSettings>(defaultLocation);
@@ -233,7 +252,6 @@ function TeacherSettings({ onClose }: { onClose: () => void }) {
   const [cardIcon, setCardIcon] = useState("⭐");
   const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
   const [notice, setNotice] = useState("");
-  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     const savedLocation = localStorage.getItem("morning-location-settings");
@@ -257,26 +275,6 @@ function TeacherSettings({ onClose }: { onClose: () => void }) {
     localStorage.setItem("morning-schedule-cards", JSON.stringify(cards));
     setNotice("이 기기에 저장했어요 ✓");
     window.setTimeout(() => setNotice(""), 1800);
-  };
-
-  const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setNotice("이 기기는 위치 찾기를 지원하지 않아요.");
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setLocation({ name: location.name || "현재 위치", latitude: Number(coords.latitude.toFixed(6)), longitude: Number(coords.longitude.toFixed(6)), source: "device" });
-        setLocating(false);
-        setNotice("현재 위치를 가져왔어요. 저장을 눌러주세요.");
-      },
-      () => {
-        setLocating(false);
-        setNotice("위치 권한을 허용하지 않았어요. 지역명을 직접 입력해도 돼요.");
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
-    );
   };
 
   const addName = () => {
@@ -317,11 +315,16 @@ function TeacherSettings({ onClose }: { onClose: () => void }) {
 
       <section className="settings-panel">
         {tab === "location" && <div className="settings-section location-settings">
-          <div className="settings-copy"><b>유치원 지역</b><span>날씨를 불러올 기준 지역을 한 번 저장해요.</span></div>
-          <label>지역명<input value={location.name} onChange={(event) => setLocation({ ...location, name: event.target.value, source: "manual" })} placeholder="예: 서울특별시 종로구" /></label>
-          <button className="location-button" onClick={useCurrentLocation} disabled={locating}>{locating ? "위치를 찾는 중…" : "◎ 현재 위치 가져오기"}</button>
-          {location.latitude !== null && <div className="coordinate-note"><b>위치 좌표 저장 준비됨</b><span>{location.latitude}, {location.longitude}</span></div>}
-          <p className="settings-note">지역명과 좌표는 이 기기에만 저장돼요. 저장한 좌표는 기상청 날씨에, 지역명은 에어코리아 측정소 선택에 사용해요.</p>
+          <div className="settings-copy"><b>유치원 지역</b><span>날씨와 미세먼지를 확인할 지역을 선택해요.</span></div>
+          <div className="location-preset-grid">
+            {locationPresets.map((preset) => <button
+              key={preset.name}
+              className={location.name === preset.name ? "active" : ""}
+              onClick={() => { setLocation(preset); setNotice(`${preset.name.split(" ").at(-1)}으로 선택했어요. 저장을 눌러주세요.`); }}
+            ><span>📍</span><b>{preset.name.replace("인천 ", "")}</b></button>)}
+          </div>
+          <div className="selected-location"><span>선택한 지역</span><b>{location.name}</b></div>
+          <p className="settings-note">선택한 지역의 좌표와 가까운 측정소를 자동으로 사용해요. 변경한 뒤 아래의 설정 저장을 눌러주세요.</p>
         </div>}
 
         {tab === "helpers" && <div className="settings-section">
@@ -344,9 +347,8 @@ function TeacherSettings({ onClose }: { onClose: () => void }) {
             <div><span className={apiStatus?.geminiKeyConfigured ? "status-dot ready" : "status-dot"} /><b>Gemini AI</b><em>{apiStatus?.geminiKeyConfigured ? "키 설정됨" : "키 없음 · 예시 문장 사용 중"}</em></div>
             <div><span className={apiStatus?.weatherLive ? "status-dot ready" : "status-dot pending"} /><b>날씨</b><em>{apiStatus?.weatherLive ? "기상청 키 인식됨" : "키 이름 또는 배포 설정 확인"}</em></div>
             <div><span className={apiStatus?.airLive ? "status-dot ready" : "status-dot pending"} /><b>미세먼지</b><em>{apiStatus?.airLive ? "에어코리아 키 인식됨" : "키 이름 또는 배포 설정 확인"}</em></div>
-            <div><span className={apiStatus?.publicDataKeyConfigured ? "status-dot ready" : "status-dot"} /><b>공공데이터 키</b><em>{apiStatus?.publicDataKeyConfigured ? "키 설정됨" : "키 없음"}</em></div>
           </div>
-          <p className="settings-note">API 키는 이 화면에 입력하지 않고, 버셀의 Environment Variables에 넣어야 안전해요.</p>
+          <p className="settings-note">이 화면에서는 연결 상태만 확인할 수 있어요.</p>
         </div>}
       </section>
 
@@ -492,8 +494,10 @@ function HelperPage() {
         <div className="helper-avatar">🌱</div>
         <p className="helper-label">오늘 우리 반을 도와줄 친구는</p>
         <div className="helper-name">{helper}</div>
-        <p className="helper-cheer">저장한 순서대로 매일 한 명씩 바뀌어요</p>
-        <button className="edit-mini" onClick={() => setEditing(true)}>⚙ 도우미 순서 설정</button>
+        <div className="helper-footer">
+          <p className="helper-cheer">저장한 순서대로 매일 한 명씩 바뀌어요</p>
+          <button className="edit-mini" onClick={() => setEditing(true)}>⚙ 도우미 순서 설정</button>
+        </div>
       </> : <div className="helper-admin">
         <div className="helper-admin-head"><b>도우미 순서 설정</b><button onClick={() => setEditing(false)}>설정 완료</button></div>
         <div className="helper-name-list">
