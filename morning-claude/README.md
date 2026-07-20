@@ -1,7 +1,7 @@
 # 아침모임 웹앱
 
 만 3세 학급 아침모임용 웹앱입니다. 날씨/미세먼지는 공공데이터포털 API에서,
-오늘의 질문·안전약속은 OpenAI API로 그 자리에서 생성합니다.
+오늘의 질문·안전약속은 Gemini API로 그 자리에서 생성합니다.
 "오늘의 도우미" 명단은 서버가 아니라 **이 화면(브라우저)에만** 저장됩니다 —
 전자칠판 캐시를 지우면 초기화되니 참고해주세요.
 
@@ -21,7 +21,7 @@ npm run dev
 |---|---|---|
 | `PUBLIC_DATA_WEATHER_KEY` | [기상청 단기예보 조회서비스](https://www.data.go.kr/data/15084084/openapi.do) | "일반 인증키(Decoding)" 사용 |
 | `PUBLIC_DATA_AIR_KEY` | [에어코리아 대기오염정보](https://www.data.go.kr/data/15073861/openapi.do) | 위와 동일 |
-| `OPENAI_API_KEY` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | Vercel에는 절대 프론트 코드에 넣지 말고 환경변수로만 등록 |
+| `GEMINI_API_KEY` | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) | Vercel에는 절대 프론트 코드에 넣지 말고 환경변수로만 등록 |
 
 공공데이터포털은 활용신청 후 **승인까지 1~2시간 정도 걸릴 수 있어요.**
 
@@ -34,7 +34,7 @@ npm run dev
 
 1. 이 폴더를 GitHub 저장소에 올리기 (`.env.local`은 `.gitignore`에 포함되어 있어 자동으로 제외됨)
 2. [vercel.com](https://vercel.com) → New Project → 방금 만든 저장소 선택
-3. 배포 전 **Environment Variables** 항목에 다음 6개 키 등록: `PUBLIC_DATA_WEATHER_KEY`, `PUBLIC_DATA_AIR_KEY`, `OPENAI_API_KEY`, `WEATHER_NX`, `WEATHER_NY`, `AIR_STATION_NAME`
+3. 배포 전 **Environment Variables** 항목에 다음 6개 키 등록: `PUBLIC_DATA_WEATHER_KEY`, `PUBLIC_DATA_AIR_KEY`, `GEMINI_API_KEY`, `WEATHER_NX`, `WEATHER_NY`, `AIR_STATION_NAME`
 4. Deploy 클릭
 
 ## 5. 나중에 수정하고 싶을 때

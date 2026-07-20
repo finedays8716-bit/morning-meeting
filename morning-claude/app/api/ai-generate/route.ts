@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 // 그날 일과(활동 목록)를 바탕으로 만 3세 대상 '랜덤질문' 또는 '안전약속'을
-// OpenAI API로 생성하는 라우트. 키는 서버에만 존재하고 브라우저에는
+// Google Gemini API로 생성하는 라우트. 키는 서버에만 존재하고 브라우저에는
 // 절대 노출되지 않습니다.
 
 type RequestBody = {
@@ -34,10 +34,10 @@ function buildPrompt(type: string, activities: string[]) {
 }
 
 export async function POST(req: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "OPENAI_API_KEY 환경변수가 설정되지 않았습니다." },
+      { error: "GEMINI_API_KEY 환경변수가 설정되지 않았습니다." },
       { status: 500 }
     );
   }
@@ -50,18 +50,19 @@ export async function POST(req: Request) {
   }
 
   const prompt = buildPrompt(body.type, body.activities || []);
+  const model = "gemini-2.0-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        max_tokens: 200,
-        messages: [{ role: "user", content: prompt }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 200,
+          temperature: 0.9,
+        },
       }),
     });
 
@@ -69,12 +70,14 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: data?.error?.message || "OpenAI 호출 중 오류가 발생했습니다." },
+        { error: data?.error?.message || "Gemini 호출 중 오류가 발생했습니다." },
         { status: 500 }
       );
     }
 
-    const text = data?.choices?.[0]?.message?.content?.trim() || "생성에 실패했어요. 다시 시도해 주세요.";
+    const text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+      "생성에 실패했어요. 다시 시도해 주세요.";
 
     return NextResponse.json({ text });
   } catch (err) {
