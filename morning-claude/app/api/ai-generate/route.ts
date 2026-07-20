@@ -50,7 +50,7 @@ export async function POST(req: Request) {
   }
 
   const prompt = buildPrompt(body.type, body.activities || []);
-  const model = "gemini-2.0-flash";
+  const model = "gemini-2.5-flash-lite";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   try {
