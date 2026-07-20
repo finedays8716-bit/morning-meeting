@@ -283,6 +283,12 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
 .ai-controls button, .message-actions button { padding: 10px 16px; border: 0; border-radius: 13px; background: #e7952e; color: white; font-weight: 900; cursor: pointer; }
 .compact-message { padding: clamp(22px, 3vw, 38px); }
 .compact-message p { font-size: clamp(30px, 4vw, 56px); }
+.ai-source { display: inline-flex; align-items: center; justify-content: center; gap: 8px; max-width: 100%; margin: 0 auto 17px; padding: 8px 13px; border-radius: 14px; background: rgba(255,255,255,.72); color: #736879; font-size: clamp(12px, 1.15vw, 15px); line-height: 1.25; }
+.ai-source b { white-space: nowrap; }
+.ai-source span { font-weight: 700; }
+.ai-source.ai { background: #e5f7ee; color: #287558; }
+.ai-source.example { background: #fff0d7; color: #9b641b; }
+.ai-source.teacher { background: #eee8fb; color: #6f58a1; }
 .compact-message textarea { width: 100%; min-height: 115px; padding: 12px; resize: none; border: 3px solid rgba(255,255,255,.9); border-radius: 16px; background: rgba(255,255,255,.72); color: var(--ink); font: inherit; font-size: clamp(26px, 3.5vw, 45px); font-weight: 900; text-align: center; }
 .message-actions { display: flex; gap: 8px; }
 .promise-card + .message-actions button { background: #dd6788; }
@@ -361,6 +367,7 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
   .edit-mini { margin-top: 10px; }
   .helper-name-list { grid-template-columns: repeat(2, 1fr); max-height: 180px; }
   .message-card { padding: 25px 14px; border-radius: 22px; }
+  .ai-source { display: grid; gap: 2px; margin-bottom: 9px; padding: 6px 10px; font-size: 10px; }
   .message-card p, .compact-message p { font-size: 34px; line-height: 1.05; }
   .quote-mark { font-size: 80px; top: -17px; left: 13px; }
   .tiny-tag { margin-top: 15px; padding: 7px 11px; font-size: 11px; }

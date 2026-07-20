@@ -274,6 +274,8 @@ function HelperPage() {
 function QuestionPage() {
   const [topic, setTopic] = useState("오늘의 날씨");
   const [question, setQuestion] = useState("오늘 하늘을 보니 어떤 생각이 드나요?");
+  const [source, setSource] = useState<"initial" | "ai" | "example" | "teacher">("initial");
+  const [sourceMessage, setSourceMessage] = useState("질문 만들기를 누르면 Gemini가 새 질문을 만들어요.");
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const generate = async () => {
@@ -282,14 +284,20 @@ function QuestionPage() {
       const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "question", topic }) });
       const data = await response.json();
       setQuestion(data.text);
+      setSource(data.mode === "ai" ? "ai" : "example");
+      setSourceMessage(data.message || (data.mode === "ai" ? "Gemini AI가 새로 만든 문장이에요." : "API 연결이 필요해 예시 문장을 보여드려요."));
+    } catch {
+      setSource("example");
+      setSourceMessage("AI 연결을 확인해주세요. 현재 문장은 그대로 유지했어요.");
     } finally { setLoading(false); }
   };
   return (
     <div className="ai-page">
       <div className="ai-controls"><input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="질문 주제 입력" /><button onClick={generate} disabled={loading}>{loading ? "생각 중…" : "질문 만들기"}</button></div>
       <div className="message-card question-card compact-message">
+        <div className={`ai-source ${source}`}><b>{source === "ai" ? "✨ Gemini AI 생성" : source === "teacher" ? "✎ 교사가 수정한 문장" : source === "example" ? "⚠ 예시 문장 · API 연결 확인" : "준비된 예시 문장"}</b><span>{sourceMessage}</span></div>
         <span className="quote-mark">“</span>
-        {editing ? <textarea value={question} onChange={(event) => setQuestion(event.target.value)} /> : <p>{question}</p>}
+        {editing ? <textarea value={question} onChange={(event) => { setQuestion(event.target.value); setSource("teacher"); setSourceMessage("교사가 직접 다듬은 문장이에요."); }} /> : <p>{question}</p>}
         <span className="tiny-tag">정답은 없어요. 자유롭게 이야기해요!</span>
       </div>
       <div className="message-actions"><button onClick={generate}>↻ 다시 생성</button><button onClick={() => setEditing((value) => !value)}>{editing ? "✓ 수정 완료" : "✎ 직접 수정"}</button></div>
@@ -299,6 +307,8 @@ function QuestionPage() {
 
 function PromisePage() {
   const [promise, setPromise] = useState("이동할 때는 앞을 잘 살펴요.");
+  const [source, setSource] = useState<"initial" | "ai" | "example" | "teacher">("initial");
+  const [sourceMessage, setSourceMessage] = useState("버튼을 누르면 오늘의 일과를 보고 Gemini가 약속을 만들어요.");
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const generate = async () => {
@@ -310,13 +320,19 @@ function PromisePage() {
       const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "promise", schedule }) });
       const data = await response.json();
       setPromise(data.text);
+      setSource(data.mode === "ai" ? "ai" : "example");
+      setSourceMessage(data.message || (data.mode === "ai" ? "Gemini AI가 새로 만든 문장이에요." : "API 연결이 필요해 예시 문장을 보여드려요."));
+    } catch {
+      setSource("example");
+      setSourceMessage("AI 연결을 확인해주세요. 현재 문장은 그대로 유지했어요.");
     } finally { setLoading(false); }
   };
   return (
     <div className="ai-page">
       <div className="message-card promise-card compact-message">
+        <div className={`ai-source ${source}`}><b>{source === "ai" ? "✨ Gemini AI 생성" : source === "teacher" ? "✎ 교사가 수정한 문장" : source === "example" ? "⚠ 예시 문장 · API 연결 확인" : "준비된 예시 문장"}</b><span>{sourceMessage}</span></div>
         <div className="promise-icon">🤝</div>
-        {editing ? <textarea value={promise} onChange={(event) => setPromise(event.target.value)} /> : <p>{promise}</p>}
+        {editing ? <textarea value={promise} onChange={(event) => { setPromise(event.target.value); setSource("teacher"); setSourceMessage("교사가 직접 다듬은 문장이에요."); }} /> : <p>{promise}</p>}
         <span className="tiny-tag">오늘의 일과에 어울리는 약속이에요</span>
       </div>
       <div className="message-actions"><button onClick={generate} disabled={loading}>{loading ? "생각 중…" : "↻ 약속 생성·다시 생성"}</button><button onClick={() => setEditing((value) => !value)}>{editing ? "✓ 수정 완료" : "✎ 직접 수정"}</button></div>
