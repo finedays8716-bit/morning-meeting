@@ -76,7 +76,11 @@ async function callGemini(model: string, apiKey: string, prompt: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 200, temperature: 0.9 },
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.9,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
   const data = await res.json();
