@@ -24,6 +24,21 @@ type ApiStatus = {
   airLive: boolean;
 };
 
+type LiveWeatherData = {
+  location: { name: string; latitude: number; longitude: number };
+  weather: null | { condition: string; icon: string; temperature: number; precipitationProbability: number | null; forecastTime: string };
+  air: null | { pm10: number | null; pm25: number | null; stationName: string; dataTime: string };
+  live: { weather: boolean; air: boolean };
+  errors: { weather: string | null; air: string | null };
+};
+
+const defaultLocation: LocationSettings = {
+  name: "인천 서해구 청라동",
+  latitude: 37.5291606,
+  longitude: 126.6375176,
+  source: "manual",
+};
+
 const pages: PageInfo[] = [
   { title: "오늘은 몇 월 며칠일까요?", shortTitle: "날짜와 요일", spritePosition: "0% 0%", color: "#ff8f70", light: "#fff0e9" },
   { title: "오늘 날씨는 어때요?", shortTitle: "날씨와 미세먼지", spritePosition: "50% 0%", color: "#4fa9e8", light: "#eaf6ff" },
@@ -54,32 +69,71 @@ function DatePage() {
 }
 
 function WeatherPage() {
-  const [locationName, setLocationName] = useState("지역 미설정");
+  const [location, setLocation] = useState<LocationSettings>(defaultLocation);
+  const [data, setData] = useState<LiveWeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshCount, setRefreshCount] = useState(0);
   const airQuality = [
-    getAirQuality("PM10", 28),
-    getAirQuality("PM2.5", 12),
+    getAirQuality("PM10", data?.air?.pm10 ?? null),
+    getAirQuality("PM2.5", data?.air?.pm25 ?? null),
   ];
 
   useEffect(() => {
     const saved = localStorage.getItem("morning-location-settings");
-    if (!saved) return;
+    if (!saved) return setLocation(defaultLocation);
     try {
-      const location: LocationSettings = JSON.parse(saved);
-      if (location.name) setLocationName(location.name);
+      const savedLocation: LocationSettings = JSON.parse(saved);
+      setLocation({
+        name: savedLocation.name || defaultLocation.name,
+        latitude: savedLocation.latitude ?? defaultLocation.latitude,
+        longitude: savedLocation.longitude ?? defaultLocation.longitude,
+        source: savedLocation.source || "manual",
+      });
     } catch {
-      // 저장값이 손상되면 기본 안내를 유지해요.
+      setLocation(defaultLocation);
     }
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    const query = new URLSearchParams({
+      region: location.name,
+      lat: String(location.latitude ?? defaultLocation.latitude),
+      lon: String(location.longitude ?? defaultLocation.longitude),
+    });
+    fetch(`/api/weather?${query}`, { signal: controller.signal })
+      .then((response) => response.json())
+      .then((result: LiveWeatherData) => setData(result))
+      .catch((error) => { if (error.name !== "AbortError") setData(null); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [location, refreshCount]);
+
+  const worstAir = airQuality.some((air) => air.status === "매우 나쁨") ? "매우 나쁨"
+    : airQuality.some((air) => air.status === "나쁨") ? "나쁨"
+      : airQuality.some((air) => air.status === "확인 안 됨") ? "확인 안 됨" : "괜찮음";
+  const airMessage = worstAir === "매우 나쁨" || worstAir === "나쁨"
+    ? "공기가 좋지 않아요. 실내놀이를 선택해요."
+    : worstAir === "확인 안 됨" ? "미세먼지 정보를 확인하고 있어요." : "공기가 괜찮아요. 바깥놀이를 할 수 있어요!";
+
   return (
-    <div className="weather-grid">
+    <div className="weather-wrap">
+      <div className="weather-live-bar">
+        <span className={data?.live.weather || data?.live.air ? "live-indicator active" : "live-indicator"} />
+        <b>{loading ? "공공데이터를 불러오는 중…" : data?.live.weather || data?.live.air ? "실시간 공공데이터" : "API 연결을 확인해주세요"}</b>
+        <button onClick={() => setRefreshCount((count) => count + 1)} disabled={loading}>↻ 새로고침</button>
+      </div>
+      <div className="weather-grid">
       <article className="weather-card sky-card">
-        <div className="big-weather">☀️</div>
+        <div className="big-weather">{loading ? "⏳" : data?.weather?.icon || "🌡️"}</div>
         <div>
           <p className="eyebrow">오늘의 날씨</p>
-          <span className="weather-location">📍 {locationName}</span>
-          <h3>맑아요</h3>
-          <p className="temperature">24℃</p>
+          <span className="weather-location">📍 {location.name}</span>
+          <h3>{loading ? "확인 중이에요" : data?.weather?.condition || "날씨 연결 확인"}</h3>
+          <p className="temperature">{data?.weather ? `${Math.round(data.weather.temperature)}℃` : "--℃"}</p>
+          {data?.weather?.precipitationProbability !== null && data?.weather?.precipitationProbability !== undefined && <p className="rain-probability">비 올 확률 {data.weather.precipitationProbability}%</p>}
+          {!loading && data?.errors.weather && <p className="weather-error">{data.errors.weather}</p>}
         </div>
       </article>
       <article className="weather-card air-card">
@@ -89,25 +143,28 @@ function WeatherPage() {
               <p className="eyebrow">오늘의 대기질</p>
               <h3>미세먼지</h3>
             </div>
-            <span className="air-updated">예시 수치</span>
+            <span className="air-updated">{data?.air ? `${data.air.stationName} 측정소` : loading ? "확인 중" : "연결 확인"}</span>
           </div>
           <div className="air-readings">
             {airQuality.map((air) => (
               <div className="air-reading" key={air.type} style={{ "--air-color": air.color, "--air-soft": air.soft } as React.CSSProperties}>
                 <span className="air-status">{air.status}</span>
-                <div className="air-value"><b>{air.value}</b><span>㎍/㎥</span></div>
+                <div className="air-value"><b>{air.value ?? "--"}</b><span>㎍/㎥</span></div>
                 <p>{air.label}</p>
               </div>
             ))}
           </div>
-          <p className="air-note"><span aria-hidden="true">●</span> 공기가 맑아요. 바깥놀이를 할 수 있어요!</p>
+          <p className={`air-note ${worstAir === "나쁨" || worstAir === "매우 나쁨" ? "bad" : ""}`}><span aria-hidden="true">●</span> {airMessage}</p>
+          {!loading && data?.errors.air && <p className="weather-error air-error">{data.errors.air}</p>}
         </div>
       </article>
+      </div>
     </div>
   );
 }
 
-function getAirQuality(type: "PM10" | "PM2.5", value: number) {
+function getAirQuality(type: "PM10" | "PM2.5", value: number | null) {
+  if (value === null) return { type, label: type === "PM10" ? "미세먼지" : "초미세먼지", value: null, status: "확인 안 됨", color: "#8b9298", soft: "#f0f2f4" };
   const levels = type === "PM10"
     ? [
         [30, "좋음", "#1683e3", "#e9f5ff"],
@@ -138,6 +195,14 @@ function cleanPromiseForDisplay(text: string) {
     .trim();
 }
 
+function cleanAiTextForDisplay(text: string) {
+  return String(text || "")
+    .replace(/\*\*|__|`/g, "")
+    .replace(/["“”]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const starterScheduleCards: ScheduleCard[] = [
   { id: "arrival", label: "등원", icon: "🎒" },
   { id: "free-play", label: "자유놀이", icon: "🧸" },
@@ -160,7 +225,7 @@ const cardIcons = ["🎒", "🧸", "🥛", "🍎", "✨", "🏠", "🚌", "🚨"
 
 function TeacherSettings({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<"location" | "helpers" | "schedule" | "api">("location");
-  const [location, setLocation] = useState<LocationSettings>({ name: "", latitude: null, longitude: null, source: "manual" });
+  const [location, setLocation] = useState<LocationSettings>(defaultLocation);
   const [names, setNames] = useState<string[]>(["새싹이", "꽃잎이", "햇살이"]);
   const [nameDraft, setNameDraft] = useState("");
   const [cards, setCards] = useState<ScheduleCard[]>(starterScheduleCards);
@@ -256,7 +321,7 @@ function TeacherSettings({ onClose }: { onClose: () => void }) {
           <label>지역명<input value={location.name} onChange={(event) => setLocation({ ...location, name: event.target.value, source: "manual" })} placeholder="예: 서울특별시 종로구" /></label>
           <button className="location-button" onClick={useCurrentLocation} disabled={locating}>{locating ? "위치를 찾는 중…" : "◎ 현재 위치 가져오기"}</button>
           {location.latitude !== null && <div className="coordinate-note"><b>위치 좌표 저장 준비됨</b><span>{location.latitude}, {location.longitude}</span></div>}
-          <p className="settings-note">지역명과 좌표는 이 기기에만 저장돼요. 현재 날씨 화면은 아직 예시 데이터이며, 실제 공공데이터 API는 다음 단계에서 연결해요.</p>
+          <p className="settings-note">지역명과 좌표는 이 기기에만 저장돼요. 저장한 좌표는 기상청 날씨에, 지역명은 에어코리아 측정소 선택에 사용해요.</p>
         </div>}
 
         {tab === "helpers" && <div className="settings-section">
@@ -277,8 +342,8 @@ function TeacherSettings({ onClose }: { onClose: () => void }) {
           <div className="settings-copy"><b>API 연결 상태</b><span>비밀키 내용은 화면에 표시하지 않아요.</span></div>
           <div className="api-status-list">
             <div><span className={apiStatus?.geminiKeyConfigured ? "status-dot ready" : "status-dot"} /><b>Gemini AI</b><em>{apiStatus?.geminiKeyConfigured ? "키 설정됨" : "키 없음 · 예시 문장 사용 중"}</em></div>
-            <div><span className={apiStatus?.weatherLive ? "status-dot ready" : "status-dot pending"} /><b>날씨</b><em>아직 미연결 · 예시 데이터</em></div>
-            <div><span className={apiStatus?.airLive ? "status-dot ready" : "status-dot pending"} /><b>미세먼지</b><em>아직 미연결 · 예시 데이터</em></div>
+            <div><span className={apiStatus?.weatherLive ? "status-dot ready" : "status-dot pending"} /><b>날씨</b><em>{apiStatus?.weatherLive ? "기상청 키 인식됨" : "키 이름 또는 배포 설정 확인"}</em></div>
+            <div><span className={apiStatus?.airLive ? "status-dot ready" : "status-dot pending"} /><b>미세먼지</b><em>{apiStatus?.airLive ? "에어코리아 키 인식됨" : "키 이름 또는 배포 설정 확인"}</em></div>
             <div><span className={apiStatus?.publicDataKeyConfigured ? "status-dot ready" : "status-dot"} /><b>공공데이터 키</b><em>{apiStatus?.publicDataKeyConfigured ? "키 설정됨" : "키 없음"}</em></div>
           </div>
           <p className="settings-note">API 키는 이 화면에 입력하지 않고, 버셀의 Environment Variables에 넣어야 안전해요.</p>
@@ -453,7 +518,7 @@ function QuestionPage() {
     try {
       const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "question", topic }) });
       const data = await response.json();
-      setQuestion(data.text);
+      setQuestion(cleanAiTextForDisplay(data.text));
       setSource(data.mode === "ai" ? "ai" : "example");
       setSourceMessage(data.message || (data.mode === "ai" ? "Gemini AI가 새로 만든 문장이에요." : "API 연결이 필요해 예시 문장을 보여드려요."));
     } catch {
@@ -489,7 +554,7 @@ function PromisePage() {
     try {
       const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "promise", schedule }) });
       const data = await response.json();
-      setPromise(cleanPromiseForDisplay(data.text));
+      setPromise(cleanAiTextForDisplay(cleanPromiseForDisplay(data.text)));
       setSource(data.mode === "ai" ? "ai" : "example");
       setSourceMessage(data.message || (data.mode === "ai" ? "Gemini AI가 새로 만든 문장이에요." : "API 연결이 필요해 예시 문장을 보여드려요."));
     } catch {

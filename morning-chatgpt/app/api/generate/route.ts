@@ -13,6 +13,14 @@ function fallback(kind: string, topic: string, schedule: string) {
   return "친구의 이야기를 잘 듣고 서로 다정하게 말해요.";
 }
 
+function cleanAiText(text: string) {
+  return String(text || "")
+    .replace(/\*\*|__|`|#+\s*/g, "")
+    .replace(/["“”]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function cleanPromise(text: string) {
   const plain = text
     .replace(/\*\*|__|`|#+\s*/g, "")
@@ -28,7 +36,7 @@ function cleanPromise(text: string) {
     .trim();
   const sentences = withoutLabel.match(/[^.!?]+[.!?]?/g)?.map((item) => item.trim()).filter(Boolean) || [];
   const childFriendly = sentences.filter((item) => /(?:요|해요|돼요|않아요|말아요)[.!?]?$/u.test(item));
-  return (childFriendly.at(-1) || sentences.at(-1) || withoutLabel).replace(/^["“]|["”]$/g, "").trim();
+  return cleanAiText(childFriendly.at(-1) || sentences.at(-1) || withoutLabel);
 }
 
 export async function POST(request: Request) {
@@ -43,7 +51,7 @@ export async function POST(request: Request) {
   }
 
   const instruction = kind === "question"
-    ? `만 3~5세 유아가 아침모임에서 자유롭게 말할 수 있는 열린 질문 하나를 만드세요. 주제: ${topic}. 한 문장만, 쉽고 따뜻한 한국어로 쓰세요.`
+    ? `만 3~5세 유아가 아침모임에서 자유롭게 말할 수 있는 열린 질문 하나를 만드세요. 주제: ${topic}. 한 문장만, 쉽고 따뜻한 한국어로 쓰세요. 설명, 제목, 큰따옴표, 굵은 글씨 표시 없이 질문 문장만 출력하세요.`
     : `유치원 오늘의 일과(${schedule || "일상적인 유치원 생활"})를 보고 가장 필요한 안전 또는 생활 약속 하나를 만드세요. 만 3~5세가 바로 이해할 수 있는 35자 안팎의 긍정적인 한국어 한 문장만 쓰세요. 설명, 제목, 인사, 따옴표, 굵은 글씨 표시 없이 약속 문장만 출력하세요.`;
   const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 
@@ -79,7 +87,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return Response.json({ text: kind === "promise" ? cleanPromise(text) : text, mode: "ai", message: "Gemini AI가 새로 만든 문장이에요." });
+    return Response.json({ text: kind === "promise" ? cleanPromise(text) : cleanAiText(text), mode: "ai", message: "Gemini AI가 새로 만든 문장이에요." });
   } catch {
     return Response.json({
       text: fallback(kind, topic, schedule),

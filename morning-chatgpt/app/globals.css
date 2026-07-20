@@ -234,6 +234,12 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
 .weekday-badge { display: inline-block; margin-top: 32px; padding: 13px 36px; border-radius: 999px; background: var(--page-color); color: white; font-size: clamp(25px, 3vw, 44px); font-weight: 900; box-shadow: 0 8px 0 color-mix(in srgb, var(--page-color) 72%, black); }
 .loading-date { font-size: 30px; font-weight: 800; }
 
+.weather-wrap { display: grid; gap: 9px; width: 100%; }
+.weather-live-bar { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 28px; color: #68737b; font-size: 12px; }
+.weather-live-bar button { margin-left: auto; padding: 5px 9px; border: 0; border-radius: 9px; background: #e6f3fb; color: #377ca9; font-size: 11px; font-weight: 900; cursor: pointer; }
+.weather-live-bar button:disabled { opacity: .55; }
+.live-indicator { width: 9px; height: 9px; border-radius: 50%; background: #d3a34c; box-shadow: 0 0 0 4px #fff2d8; }
+.live-indicator.active { background: #36a879; box-shadow: 0 0 0 4px #e1f5eb; }
 .weather-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(18px, 3vw, 38px); width: 100%; }
 .weather-card { display: flex; align-items: center; justify-content: center; gap: clamp(18px, 3vw, 40px); min-height: clamp(220px, 32vh, 330px); padding: 28px; border-radius: 38px; }
 .sky-card { background: #eef8ff; border: 3px solid #d5edff; }
@@ -253,8 +259,13 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
 .eyebrow { margin: 0 0 7px; color: var(--soft-ink); font-size: clamp(15px, 1.4vw, 20px); font-weight: 800; }
 .weather-card h3 { margin: 0; font-size: clamp(35px, 4vw, 62px); letter-spacing: -.05em; }
 .temperature { margin: 5px 0 0; color: #3a97d5; font-size: clamp(28px, 3vw, 45px); font-weight: 900; }
+.rain-probability { margin: 3px 0 0; color: #557688; font-size: 12px; font-weight: 850; }
+.weather-error { max-width: 250px; margin: 5px 0 0; color: #b65b68; font-size: 10px; font-weight: 750; line-height: 1.25; }
+.weather-error.air-error { max-width: none; text-align: center; }
 .air-note { margin: 14px 0 0; color: #397e62; font-size: clamp(14px, 1.25vw, 18px); font-weight: 800; text-align: center; }
 .air-note span { color: #32a852; margin-right: 5px; }
+.air-note.bad { color: #b24a52; }
+.air-note.bad span { color: #e34747; }
 
 .schedule-board { display: grid; grid-template-columns: minmax(330px, .9fr) minmax(460px, 1.25fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px 18px; width: 100%; height: 100%; min-height: 0; }
 .schedule-toolbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
@@ -411,10 +422,15 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
   .date-numbers b { font-size: clamp(65px, 22vw, 100px); }
   .weekday-badge { margin-top: 18px; padding: 8px 26px; font-size: 32px; }
   .weather-grid { grid-template-columns: 1fr; }
+  .weather-wrap { gap: 4px; }
+  .weather-live-bar { min-height: 20px; font-size: 9px; }
+  .weather-live-bar button { padding: 4px 7px; font-size: 9px; }
   .weather-card { min-height: 0; padding: 12px; border-radius: 20px; }
   .big-weather { font-size: 52px; }
   .weather-card h3 { font-size: 38px; }
   .temperature { font-size: 27px; }
+  .rain-probability { font-size: 9px; }
+  .weather-error { font-size: 8px; }
   .air-heading { margin-bottom: 7px; }
   .air-heading h3 { font-size: 32px; }
   .air-reading { padding: 9px 6px 7px; border-radius: 14px; }
