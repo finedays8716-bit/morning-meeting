@@ -101,21 +101,28 @@ function getAirQuality(type: "PM10" | "PM2.5", value: number) {
 type ScheduleCard = { id: string; label: string; icon: string };
 
 const starterScheduleCards: ScheduleCard[] = [
+  { id: "arrival", label: "등원", icon: "🎒" },
   { id: "free-play", label: "자유놀이", icon: "🧸" },
-  { id: "talk", label: "이야기 나누기", icon: "💬" },
+  { id: "morning-snack", label: "오전간식", icon: "🥛" },
+  { id: "afternoon-snack", label: "오후간식", icon: "🍎" },
+  { id: "special", label: "특성화활동", icon: "✨" },
+  { id: "home", label: "귀가", icon: "🏠" },
+  { id: "field-trip", label: "현장학습", icon: "🚌" },
+  { id: "drill", label: "대피훈련", icon: "🚨" },
+  { id: "talk", label: "이야기나누기", icon: "💬" },
+  { id: "story", label: "동화", icon: "📚" },
   { id: "outside", label: "바깥놀이", icon: "🌳" },
   { id: "art", label: "미술놀이", icon: "🎨" },
   { id: "music", label: "음악놀이", icon: "🎵" },
   { id: "lunch", label: "점심", icon: "🍚" },
   { id: "rest", label: "휴식", icon: "🌙" },
-  { id: "home", label: "귀가", icon: "🏠" },
 ];
 
-const cardIcons = ["🧸", "💬", "🌳", "🎨", "🎵", "🍚", "🌙", "🏠", "📚", "🧩", "🏃", "🧼", "🎂", "🚌", "🌱", "⭐"];
+const cardIcons = ["🎒", "🧸", "🥛", "🍎", "✨", "🏠", "🚌", "🚨", "💬", "📚", "🌳", "🎨", "🎵", "🍚", "🌙", "🧩", "🏃", "🧼", "🎂", "🌱", "⭐"];
 
 function SchedulePage() {
   const [cards, setCards] = useState<ScheduleCard[]>(starterScheduleCards);
-  const [todayIds, setTodayIds] = useState<string[]>(["free-play", "talk", "outside", "lunch"]);
+  const [todayIds, setTodayIds] = useState<string[]>(["arrival", "free-play", "morning-snack", "talk", "story", "home"]);
   const [adminMode, setAdminMode] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newIcon, setNewIcon] = useState("⭐");
@@ -124,7 +131,11 @@ function SchedulePage() {
   useEffect(() => {
     const savedCards = localStorage.getItem("morning-schedule-cards");
     const savedToday = localStorage.getItem("morning-schedule-today");
-    if (savedCards) setCards(JSON.parse(savedCards));
+    if (savedCards) {
+      const previous: ScheduleCard[] = JSON.parse(savedCards);
+      const previousIds = new Set(previous.map((card) => card.id));
+      setCards([...starterScheduleCards.filter((card) => !previousIds.has(card.id)), ...previous]);
+    }
     if (savedToday) setTodayIds(JSON.parse(savedToday));
   }, []);
 
