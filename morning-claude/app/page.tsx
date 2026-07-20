@@ -59,20 +59,58 @@ export default function Home() {
   const [locNx, setLocNx] = useState("");
   const [locNy, setLocNy] = useState("");
   const [locStation, setLocStation] = useState("");
+  const [locPreset, setLocPreset] = useState<string>("");
 
   const LOCATION_STORAGE_KEY = "morning-meeting-location";
 
+  // 주요 지역 프리셋 (수도권 15개)
+  // NX/NY: 기상청 격자좌표 / station: 에어코리아 측정소명
+  const LOCATION_PRESETS: { label: string; nx: string; ny: string; station: string }[] = [
+    { label: "서울 종로구", nx: "60", ny: "127", station: "종로구" },
+    { label: "서울 강남구", nx: "61", ny: "126", station: "강남구" },
+    { label: "서울 마포구", nx: "59", ny: "127", station: "마포구" },
+    { label: "서울 서초구", nx: "61", ny: "125", station: "서초구" },
+    { label: "서울 송파구", nx: "62", ny: "126", station: "송파구" },
+    { label: "인천 남동구", nx: "54", ny: "124", station: "구월동" },
+    { label: "인천 부평구", nx: "55", ny: "125", station: "부평" },
+    { label: "인천 연수구", nx: "55", ny: "123", station: "연수" },
+    { label: "인천 서구",   nx: "54", ny: "125", station: "석남동" },
+    { label: "인천 계양구", nx: "55", ny: "126", station: "계양" },
+    { label: "수원시",      nx: "60", ny: "121", station: "인계동" },
+    { label: "성남시 분당구", nx: "62", ny: "123", station: "정자동" },
+    { label: "안양시",      nx: "59", ny: "123", station: "비산동" },
+    { label: "부천시",      nx: "57", ny: "125", station: "오정동" },
+    { label: "고양시",      nx: "57", ny: "128", station: "화정동" },
+  ];
+
+  const applyPreset = (label: string) => {
+    setLocPreset(label);
+    if (label === "custom" || label === "") return;
+    const preset = LOCATION_PRESETS.find((p) => p.label === label);
+    if (preset) {
+      setLocNx(preset.nx);
+      setLocNy(preset.ny);
+      setLocStation(preset.station);
+    }
+  };
+
   useEffect(() => {
     // 저장된 위치 설정 먼저 읽고 그 값으로 API 호출
-    let savedLoc = { nx: "", ny: "", station: "" };
+    let savedLoc = { nx: "", ny: "", station: "", preset: "" };
     try {
       const raw = window.localStorage.getItem(LOCATION_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        savedLoc = { nx: parsed.nx || "", ny: parsed.ny || "", station: parsed.station || "" };
+        savedLoc = {
+          nx: parsed.nx || "",
+          ny: parsed.ny || "",
+          station: parsed.station || "",
+          preset: parsed.preset || "",
+        };
         setLocNx(savedLoc.nx);
         setLocNy(savedLoc.ny);
         setLocStation(savedLoc.station);
+        setLocPreset(savedLoc.preset);
       }
     } catch {}
 
@@ -104,12 +142,16 @@ export default function Home() {
   }, []);
 
   const saveLocation = () => {
-    const loc = { nx: locNx.trim(), ny: locNy.trim(), station: locStation.trim() };
+    const loc = {
+      nx: locNx.trim(),
+      ny: locNy.trim(),
+      station: locStation.trim(),
+      preset: locPreset,
+    };
     try {
       window.localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(loc));
     } catch {}
 
-    // 저장 즉시 재조회
     setWeather(null);
     setDust(null);
     const weatherQuery = loc.nx && loc.ny ? `?nx=${encodeURIComponent(loc.nx)}&ny=${encodeURIComponent(loc.ny)}` : "";
@@ -222,8 +264,23 @@ export default function Home() {
         <div className="section card">
           <h2 className="font-display">우리 반 위치 설정</h2>
           <p className="info-label" style={{ marginBottom: 14 }}>
-            이 화면(기기)에만 저장돼요. 비워두면 인천 기본값을 사용해요.
+            이 화면(기기)에만 저장돼요. 지역을 고르면 자동으로 값이 채워져요.
           </p>
+
+          <label className="location-label">지역 선택</label>
+          <select
+            className="text-input"
+            value={locPreset}
+            onChange={(e) => applyPreset(e.target.value)}
+            style={{ marginBottom: 14 }}
+          >
+            <option value="">— 선택하세요 —</option>
+            {LOCATION_PRESETS.map((p) => (
+              <option key={p.label} value={p.label}>{p.label}</option>
+            ))}
+            <option value="custom">직접 입력하기</option>
+          </select>
+
           <div className="location-grid">
             <div>
               <label className="location-label">기상청 격자좌표 NX</label>
@@ -233,7 +290,7 @@ export default function Home() {
                 inputMode="numeric"
                 placeholder="예: 54"
                 value={locNx}
-                onChange={(e) => setLocNx(e.target.value)}
+                onChange={(e) => { setLocNx(e.target.value); setLocPreset("custom"); }}
               />
             </div>
             <div>
@@ -244,7 +301,7 @@ export default function Home() {
                 inputMode="numeric"
                 placeholder="예: 124"
                 value={locNy}
-                onChange={(e) => setLocNy(e.target.value)}
+                onChange={(e) => { setLocNy(e.target.value); setLocPreset("custom"); }}
               />
             </div>
             <div>
@@ -254,19 +311,14 @@ export default function Home() {
                 type="text"
                 placeholder="예: 구월동"
                 value={locStation}
-                onChange={(e) => setLocStation(e.target.value)}
+                onChange={(e) => { setLocStation(e.target.value); setLocPreset("custom"); }}
               />
             </div>
           </div>
 
-          <div className="location-help">
-            <a href="https://www.data.go.kr/data/15084084/openapi.do" target="_blank" rel="noreferrer">
-              📍 기상청 격자좌표 찾기 (참고파일 다운로드)
-            </a>
-            <a href="https://www.airkorea.or.kr/web/stationInfo" target="_blank" rel="noreferrer">
-              📍 에어코리아 측정소 찾기
-            </a>
-          </div>
+          <p className="location-help-text">
+            💡 목록에 없는 지역이라면 "직접 입력하기"를 골라주세요. 격자좌표와 측정소명은 각각 기상청·에어코리아에서 확인할 수 있어요.
+          </p>
 
           <button className="add-btn" style={{ marginTop: 14 }} onClick={saveLocation}>
             저장하고 다시 불러오기

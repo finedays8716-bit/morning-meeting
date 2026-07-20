@@ -124,19 +124,15 @@ body {
   margin-bottom: 6px;
   font-weight: bold;
 }
-.location-help {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
+.location-help-text {
   margin-top: 14px;
   font-size: 13px;
-}
-.location-help a {
-  color: var(--cloud-blue);
-  text-decoration: none;
-}
-.location-help a:hover {
-  text-decoration: underline;
+  color: var(--muted, #5c6670);
+  background: #fbfdff;
+  border-left: 3px solid var(--cloud-blue);
+  padding: 10px 14px;
+  border-radius: 8px;
+  line-height: 1.5;
 }
 @media (max-width: 760px) {
   .location-grid {
