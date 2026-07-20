@@ -27,18 +27,31 @@ type DustData = {
   error?: string;
 };
 
+type HelperState = {
+  roster: string[];
+  currentIndex: number;
+};
+
 export default function Home() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [dust, setDust] = useState<DustData | null>(null);
 
-  const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
-  const [customActivities, setCustomActivities] = useState<string[]>([]);
+  // 오늘의 일과: 클릭한 순서 그대로 유지되는 배열
+  const [schedule, setSchedule] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
 
   const [question, setQuestion] = useState("");
   const [safetyPromise, setSafetyPromise] = useState("");
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [loadingSafety, setLoadingSafety] = useState(false);
+
+  // 오늘의 도우미 (이 브라우저에만 저장됨)
+  const [helper, setHelper] = useState<HelperState>({ roster: [], currentIndex: 0 });
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [rosterDraft, setRosterDraft] = useState("");
+  const [helperReady, setHelperReady] = useState(false);
+
+  const HELPER_STORAGE_KEY = "morning-meeting-helper-state";
 
   useEffect(() => {
     fetch("/api/weather")
@@ -50,25 +63,47 @@ export default function Home() {
       .then((r) => r.json())
       .then(setDust)
       .catch(() => setDust({ error: "미세먼지 정보를 불러오지 못했어요." }));
+
+    try {
+      const saved = window.localStorage.getItem(HELPER_STORAGE_KEY);
+      if (saved) {
+        const parsed: HelperState = JSON.parse(saved);
+        setHelper(parsed);
+        setRosterDraft(parsed.roster.join("\n"));
+      }
+    } catch {
+      // 저장된 값이 없거나 읽기 실패 — 빈 상태로 시작
+    }
+    setHelperReady(true);
   }, []);
 
-  const allActivities = [...selectedActivities, ...customActivities];
+  const saveHelperState = (next: HelperState) => {
+    setHelper(next);
+    try {
+      window.localStorage.setItem(HELPER_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // 저장 실패해도 화면 동작은 계속 진행
+    }
+  };
 
   const toggleActivity = (act: string) => {
-    setSelectedActivities((prev) =>
+    setSchedule((prev) =>
       prev.includes(act) ? prev.filter((a) => a !== act) : [...prev, act]
     );
   };
 
   const addCustomActivity = () => {
     const trimmed = customInput.trim();
-    if (!trimmed) return;
-    setCustomActivities((prev) => [...prev, trimmed]);
+    if (!trimmed || schedule.includes(trimmed)) {
+      setCustomInput("");
+      return;
+    }
+    setSchedule((prev) => [...prev, trimmed]);
     setCustomInput("");
   };
 
-  const removeCustomActivity = (act: string) => {
-    setCustomActivities((prev) => prev.filter((a) => a !== act));
+  const removeFromSchedule = (act: string) => {
+    setSchedule((prev) => prev.filter((a) => a !== act));
   };
 
   const generate = async (type: "question" | "safety") => {
@@ -80,7 +115,7 @@ export default function Home() {
       const res = await fetch("/api/ai-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, activities: allActivities }),
+        body: JSON.stringify({ type, activities: schedule }),
       });
       const data = await res.json();
       setResult(data.text || data.error || "생성에 실패했어요.");
@@ -90,6 +125,26 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  const nextHelper = () => {
+    if (helper.roster.length === 0) return;
+    saveHelperState({
+      ...helper,
+      currentIndex: (helper.currentIndex + 1) % helper.roster.length,
+    });
+  };
+
+  const saveRoster = () => {
+    const roster = rosterDraft
+      .split("\n")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    saveHelperState({ roster, currentIndex: 0 });
+    setAdminOpen(false);
+  };
+
+  const currentHelperName =
+    helperReady && helper.roster.length > 0 ? helper.roster[helper.currentIndex] : null;
 
   return (
     <main className="page">
@@ -140,12 +195,51 @@ export default function Home() {
       </div>
 
       <div className="section card">
+        <h2 className="font-display">오늘의 도우미</h2>
+        <p className="info-label" style={{ marginBottom: 10 }}>이 화면(기기)에만 저장돼요.</p>
+
+        {currentHelperName ? (
+          <div className="helper-display">
+            <span className="helper-name font-display">{currentHelperName}</span>
+          </div>
+        ) : (
+          <div className="result-empty" style={{ marginBottom: 14 }}>
+            아직 도우미 명단이 없어요. 아래에서 등록해주세요.
+          </div>
+        )}
+
+        <div className="helper-actions">
+          <button className="add-btn" onClick={nextHelper} disabled={helper.roster.length === 0}>
+            다음 도우미로
+          </button>
+          <button className="regenerate-btn" onClick={() => setAdminOpen((v) => !v)}>
+            {adminOpen ? "명단 설정 닫기" : "명단 설정"}
+          </button>
+        </div>
+
+        {adminOpen && (
+          <div className="admin-panel">
+            <p className="info-label">한 줄에 한 명씩 순서대로 입력해요.</p>
+            <textarea
+              className="result-box"
+              value={rosterDraft}
+              onChange={(e) => setRosterDraft(e.target.value)}
+              placeholder={"김유아\n이유아\n박유아"}
+            />
+            <button className="add-btn" style={{ marginTop: 10 }} onClick={saveRoster}>
+              명단 저장
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="section card">
         <h2 className="font-display">오늘의 일과</h2>
         <div className="activity-grid">
           {PRESET_ACTIVITIES.map((act) => (
             <button
               key={act}
-              className={`activity-btn ${selectedActivities.includes(act) ? "selected" : ""}`}
+              className={`activity-btn ${schedule.includes(act) ? "selected" : ""}`}
               onClick={() => toggleActivity(act)}
             >
               {act}
@@ -166,16 +260,22 @@ export default function Home() {
           </button>
         </div>
 
-        {customActivities.length > 0 && (
-          <div className="chip-row">
-            {customActivities.map((act) => (
-              <span key={act} className="chip">
-                {act}
-                <button onClick={() => removeCustomActivity(act)} aria-label={`${act} 삭제`}>
-                  ✕
-                </button>
-              </span>
-            ))}
+        {schedule.length > 0 && (
+          <div className="schedule-order">
+            <p className="info-label" style={{ marginTop: 16, marginBottom: 8 }}>
+              오늘의 순서
+            </p>
+            <ol className="order-list">
+              {schedule.map((act, i) => (
+                <li key={act} className="order-item">
+                  <span className="order-number">{i + 1}</span>
+                  <span className="order-text">{act}</span>
+                  <button onClick={() => removeFromSchedule(act)} aria-label={`${act} 삭제`}>
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
       </div>

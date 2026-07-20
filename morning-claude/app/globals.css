@@ -318,3 +318,77 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- 오늘의 도우미 ---------- */
+.helper-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 88px;
+  background: linear-gradient(135deg, rgba(255, 155, 84, 0.12), rgba(79, 168, 224, 0.12));
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.helper-name {
+  font-size: 32px;
+  color: var(--sun-orange-deep);
+}
+
+.helper-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.helper-actions .add-btn {
+  background: var(--sun-orange);
+}
+
+.admin-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--line-soft);
+}
+
+/* ---------- 오늘의 순서 ---------- */
+.order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eef7ff;
+  border: 1px solid rgba(79, 168, 224, 0.35);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 15px;
+}
+
+.order-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cloud-blue);
+  color: white;
+  font-size: 13px;
+  font-family: var(--font-display), sans-serif;
+}
+
+.order-item button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #5b8bad;
+}
