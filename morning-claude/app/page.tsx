@@ -64,7 +64,7 @@ export default function Home() {
   const LOCATION_STORAGE_KEY = "morning-meeting-location";
 
   // 주요 지역 프리셋 (수도권 15개)
-  // NX/NY: 기상청 격자좌표 / station: 에어코리아 측정소명
+  // NX/NY: 기상청 격자좌표 / station: 에어코리아 측정소명 (2026-07 검증)
   const LOCATION_PRESETS: { label: string; nx: string; ny: string; station: string }[] = [
     { label: "서울 종로구", nx: "60", ny: "127", station: "종로구" },
     { label: "서울 강남구", nx: "61", ny: "126", station: "강남구" },
@@ -73,14 +73,14 @@ export default function Home() {
     { label: "서울 송파구", nx: "62", ny: "126", station: "송파구" },
     { label: "인천 남동구", nx: "54", ny: "124", station: "구월동" },
     { label: "인천 부평구", nx: "55", ny: "125", station: "부평" },
-    { label: "인천 연수구", nx: "55", ny: "123", station: "연수" },
-    { label: "인천 서구",   nx: "54", ny: "125", station: "석남동" },
-    { label: "인천 계양구", nx: "55", ny: "126", station: "계양" },
+    { label: "인천 연수구", nx: "55", ny: "123", station: "동춘" },
+    { label: "인천 서구",   nx: "54", ny: "125", station: "석남" },
+    { label: "인천 계양구", nx: "55", ny: "126", station: "계산" },
     { label: "수원시",      nx: "60", ny: "121", station: "인계동" },
     { label: "성남시 분당구", nx: "62", ny: "123", station: "정자동" },
-    { label: "안양시",      nx: "59", ny: "123", station: "비산동" },
+    { label: "안양시",      nx: "59", ny: "123", station: "부림동" },
     { label: "부천시",      nx: "57", ny: "125", station: "오정동" },
-    { label: "고양시",      nx: "57", ny: "128", station: "화정동" },
+    { label: "고양시",      nx: "57", ny: "128", station: "주엽동" },
   ];
 
   const applyPreset = (label: string) => {
