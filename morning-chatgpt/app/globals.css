@@ -143,6 +143,53 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
 }
 .start-button span { margin-left: 10px; }
 .start-button:active { transform: translateY(5px); box-shadow: 0 4px 0 #357d68; }
+.teacher-settings-button { position: absolute; z-index: 5; top: 22px; right: 28px; padding: 10px 15px; border: 2px solid #ddd6c7; border-radius: 14px; background: rgba(255,255,255,.88); color: #635e68; font-size: 14px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 12px rgba(73,66,54,.08); }
+.weather-location { display: inline-block; margin: 3px 0 5px; padding: 5px 9px; border-radius: 999px; background: rgba(255,255,255,.78); color: #527184; font-size: 12px; font-weight: 850; }
+
+.settings-shell { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 13px; height: 100svh; min-height: 0; padding: clamp(18px, 3vh, 35px) clamp(18px, 4vw, 65px); background: radial-gradient(circle at 90% 10%, rgba(120,175,157,.18), transparent 27%), radial-gradient(circle at 5% 95%, rgba(232,186,111,.18), transparent 28%), #f8f5ed; }
+.settings-header { display: flex; align-items: center; justify-content: space-between; width: min(1100px, 100%); margin: 0 auto; }
+.settings-header p { margin: 0 0 2px; color: #4c8d78; font-size: 13px; font-weight: 900; }
+.settings-header h1 { display: inline; margin: 0; font-size: clamp(34px, 4vw, 55px); line-height: .9; }
+.settings-header span { margin-left: 13px; color: var(--soft-ink); font-size: 14px; font-weight: 700; }
+.settings-header > button { padding: 9px 14px; border: 2px solid #ddd6c9; border-radius: 13px; background: white; color: #615c66; font-weight: 850; cursor: pointer; }
+.settings-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; width: min(900px, 100%); margin: 0 auto; padding: 5px; border-radius: 18px; background: #ece7dc; }
+.settings-tabs button { min-height: 43px; padding: 7px 10px; border: 0; border-radius: 13px; background: transparent; color: #716b74; font-weight: 900; cursor: pointer; }
+.settings-tabs button.active { background: white; color: #397d68; box-shadow: 0 3px 10px rgba(70,64,53,.1); }
+.settings-panel { width: min(1100px, 100%); min-height: 0; margin: 0 auto; padding: clamp(15px, 2.6vw, 30px); overflow: auto; border: 3px solid white; border-radius: 28px; background: rgba(255,255,255,.75); box-shadow: 0 18px 36px rgba(76,68,54,.08); }
+.settings-section { width: min(880px, 100%); margin: 0 auto; }
+.settings-copy { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.settings-copy b { font-size: clamp(20px, 2.2vw, 28px); }
+.settings-copy span { color: var(--soft-ink); font-size: 13px; font-weight: 700; }
+.location-settings label { display: grid; gap: 6px; color: #5f5963; font-size: 13px; font-weight: 850; }
+.location-settings label input, .settings-add input, .settings-card-maker input { width: 100%; min-width: 0; padding: 12px 14px; border: 2px solid #d9e6df; border-radius: 12px; background: white; color: var(--ink); font: inherit; font-weight: 800; }
+.location-button { margin-top: 11px; padding: 10px 14px; border: 0; border-radius: 12px; background: #4b957c; color: white; font-weight: 900; cursor: pointer; }
+.location-button:disabled { opacity: .6; }
+.coordinate-note { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 9px 12px; border-radius: 12px; background: #e8f5ef; color: #37745f; font-size: 12px; }
+.coordinate-note span { font-variant-numeric: tabular-nums; }
+.settings-note { margin: 13px 0 0; padding: 11px 13px; border-radius: 12px; background: #fff7e4; color: #816a3f; font-size: 12px; font-weight: 750; line-height: 1.45; }
+.settings-helper-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; max-height: 38vh; overflow-y: auto; }
+.settings-helper-list > div { display: grid; grid-template-columns: 28px 1fr repeat(3, 28px); align-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: #edf7f2; }
+.settings-helper-list > div > span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #4b9b7e; color: white; font-size: 11px; font-weight: 900; }
+.settings-helper-list button { width: 27px; height: 27px; padding: 0; border: 0; border-radius: 8px; background: white; color: #4d806e; font-weight: 900; cursor: pointer; }
+.settings-helper-list button.remove { color: #c65768; }
+.settings-add { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin-top: 10px; }
+.settings-add button, .settings-card-maker button { padding: 10px 17px; border: 0; border-radius: 12px; background: #4b9279; color: white; font-weight: 900; cursor: pointer; }
+.settings-card-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; max-height: 37vh; padding: 2px; overflow-y: auto; }
+.settings-card-grid > div { position: relative; display: grid; place-items: center; min-height: 72px; padding: 7px 4px; border: 2px solid #e6ddf2; border-radius: 13px; background: white; }
+.settings-card-grid span { font-size: 25px; }
+.settings-card-grid b { margin-top: 2px; font-size: 11px; white-space: nowrap; }
+.settings-card-grid button { position: absolute; top: -4px; right: -3px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: #d85f70; color: white; font-weight: 900; }
+.settings-card-maker { display: grid; grid-template-columns: 65px 1fr auto; gap: 7px; margin-top: 10px; }
+.settings-card-maker select { padding: 9px; border: 2px solid #ddd2ec; border-radius: 12px; background: white; font-size: 20px; }
+.api-status-list { display: grid; gap: 8px; }
+.api-status-list > div { display: grid; grid-template-columns: 17px minmax(110px, .5fr) 1fr; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 13px; background: white; }
+.api-status-list em { color: var(--soft-ink); font-size: 13px; font-style: normal; font-weight: 750; }
+.status-dot { width: 12px; height: 12px; border-radius: 50%; background: #c5bfc7; box-shadow: 0 0 0 4px #f0edf0; }
+.status-dot.ready { background: #3ba477; box-shadow: 0 0 0 4px #e1f4eb; }
+.status-dot.pending { background: #e3a642; box-shadow: 0 0 0 4px #fff2d9; }
+.settings-footer { display: flex; align-items: center; justify-content: flex-end; gap: 13px; width: min(1100px, 100%); margin: 0 auto; }
+.settings-footer span { color: var(--soft-ink); font-size: 12px; font-weight: 750; }
+.settings-footer button { padding: 11px 25px; border: 0; border-radius: 13px; background: #3f8d73; color: white; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 #2f6c59; }
 
 .page-shell {
   display: grid;
@@ -209,32 +256,32 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
 .air-note { margin: 14px 0 0; color: #397e62; font-size: clamp(14px, 1.25vw, 18px); font-weight: 800; text-align: center; }
 .air-note span { color: #32a852; margin-right: 5px; }
 
-.schedule-board { width: 100%; }
-.schedule-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 14px; }
+.schedule-board { display: grid; grid-template-columns: minmax(330px, .9fr) minmax(460px, 1.25fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px 18px; width: 100%; height: 100%; min-height: 0; }
+.schedule-toolbar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
 .schedule-toolbar div { display: flex; align-items: baseline; gap: 12px; }
 .schedule-toolbar b { font-size: clamp(20px, 2vw, 29px); }
 .schedule-toolbar span { color: var(--soft-ink); font-size: 14px; font-weight: 700; }
 .admin-toggle { flex: 0 0 auto; padding: 9px 14px; border: 2px solid #ded3f4; border-radius: 13px; background: white; color: #7257ac; font-weight: 850; cursor: pointer; }
 .admin-toggle.active { background: #7355ad; color: white; }
-.today-schedule { display: flex; align-items: stretch; min-height: 128px; padding: 11px 7px; overflow: hidden; border: 3px solid #cdb8f2; border-radius: 25px; background: linear-gradient(90deg, #faf7ff, #f3ecff); }
+.today-schedule { grid-column: 1; grid-row: 2 / 4; display: flex; flex-direction: column; align-items: stretch; gap: 0; min-height: 0; padding: 8px 12px; overflow-y: auto; border: 3px solid #cdb8f2; border-radius: 25px; background: linear-gradient(180deg, #faf7ff, #f3ecff); }
 .schedule-empty { display: grid; place-items: center; width: 100%; color: #9587aa; font-size: 18px; font-weight: 800; }
 .schedule-empty.drag-over { border-radius: 18px; background: #eee4ff; color: #7554b7; }
-.schedule-position { position: relative; display: flex; flex: 1 1 0; min-width: 0; align-items: stretch; }
-.schedule-position:not(:last-of-type)::after { content: "→"; position: absolute; z-index: 3; top: 50%; right: -12px; display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #9a78df; color: white; font-size: 17px; font-weight: 900; transform: translateY(-50%); box-shadow: 0 2px 7px rgba(86,60,133,.22); }
-.insert-slot { display: grid; place-items: center; flex: 0 0 12px; min-height: 100%; border-radius: 12px; transition: flex-basis .15s ease, background .15s ease; }
-.insert-slot span { display: none; color: #7250b5; font-size: 11px; font-weight: 900; white-space: nowrap; writing-mode: vertical-rl; }
-.insert-slot.active { flex-basis: 38px; margin: 0 4px; border: 2px dashed #9a78df; background: #e9dcff; }
+.schedule-position { position: relative; display: flex; flex: 0 0 auto; flex-direction: column; min-width: 0; align-items: stretch; }
+.schedule-position:not(:last-of-type)::after { content: "↓"; position: absolute; z-index: 3; left: 50%; bottom: -12px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #9a78df; color: white; font-size: 15px; font-weight: 900; transform: translateX(-50%); box-shadow: 0 2px 7px rgba(86,60,133,.22); }
+.insert-slot { display: grid; place-items: center; flex: 0 0 9px; width: 100%; border-radius: 10px; transition: flex-basis .15s ease, background .15s ease; }
+.insert-slot span { display: none; color: #7250b5; font-size: 11px; font-weight: 900; white-space: nowrap; }
+.insert-slot.active { flex-basis: 30px; margin: 3px 0; border: 2px dashed #9a78df; background: #e9dcff; }
 .insert-slot.active span { display: block; }
 .end-slot { flex-shrink: 0; }
-.today-card { position: relative; display: grid; place-items: center; flex: 1 1 auto; min-width: 0; max-width: 170px; padding: 17px 5px 11px; border: 3px solid #d9c8f5; border-radius: 20px; background: white; text-align: center; box-shadow: 0 5px 0 #e4daf4; }
+.today-card { position: relative; display: grid; grid-template-columns: 34px 48px 1fr auto; align-items: center; min-width: 0; min-height: 53px; padding: 5px 8px; border: 3px solid #d9c8f5; border-radius: 16px; background: white; text-align: left; box-shadow: 0 4px 0 #e4daf4; }
 .today-card[draggable="true"] { cursor: grab; }
 .today-card[draggable="true"]:active { cursor: grabbing; }
-.today-order { position: absolute; top: 7px; left: 8px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #9574d6; color: white; font-size: 12px; font-weight: 900; }
-.today-icon { font-size: 42px; line-height: 1; }
-.today-card strong { margin-top: 7px; font-size: clamp(14px, 1.3vw, 19px); white-space: nowrap; }
-.today-actions { position: absolute; top: 5px; right: 5px; display: flex; gap: 2px; }
+.today-order { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #9574d6; color: white; font-size: 12px; font-weight: 900; }
+.today-icon { font-size: 30px; line-height: 1; }
+.today-card strong { font-size: clamp(14px, 1.3vw, 19px); white-space: nowrap; }
+.today-actions { display: flex; gap: 2px; }
 .today-actions button { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: #f0ebf8; color: #795ead; font-weight: 900; cursor: pointer; }
-.card-maker-wrap { margin-top: 9px; padding: 8px; border-radius: 17px; background: #f1eafa; }
+.card-maker-wrap { grid-column: 2; grid-row: 2; align-self: start; padding: 8px; border-radius: 17px; background: #f1eafa; }
 .icon-picker { display: flex; gap: 5px; margin-bottom: 7px; overflow-x: auto; }
 .icon-picker button { flex: 0 0 35px; height: 35px; padding: 0; border: 2px solid transparent; border-radius: 9px; background: white; font-size: 20px; cursor: pointer; }
 .icon-picker button.selected { border-color: #7959b5; background: #e4d7fa; }
@@ -242,7 +289,8 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
 .card-maker input { min-width: 0; padding: 10px 12px; border: 2px solid #ded2f1; border-radius: 11px; background: white; font-weight: 800; }
 .chosen-icon { display: grid; place-items: center; border-radius: 11px; background: white; font-size: 23px; }
 .card-maker button { padding: 9px 15px; border: 0; border-radius: 11px; background: #7657b2; color: white; font-weight: 850; cursor: pointer; }
-.schedule-tray { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 7px; margin-top: 9px; padding: 5px 3px 3px; overflow: hidden; }
+.schedule-tray { grid-column: 2; grid-row: 2 / 4; align-content: start; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; padding: 5px 3px 3px; overflow-y: auto; }
+.schedule-board:has(.card-maker-wrap) .schedule-tray { grid-row: 3; }
 .tray-card { position: relative; min-width: 0; touch-action: manipulation; }
 .tray-card-main { display: grid; place-items: center; width: 100%; min-height: 72px; padding: 6px 4px; border: 2px solid #e7dcfa; border-radius: 15px; background: white; color: var(--ink); cursor: grab; box-shadow: 0 3px 0 #eee7fa; }
 .tray-card-main:active { cursor: grabbing; transform: translateY(2px); }
@@ -282,6 +330,12 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
 .ai-controls button, .message-actions button { padding: 10px 16px; border: 0; border-radius: 13px; background: #e7952e; color: white; font-weight: 900; cursor: pointer; }
 .compact-message { padding: clamp(22px, 3vw, 38px); }
 .compact-message p { font-size: clamp(30px, 4vw, 56px); }
+.ai-source { display: inline-flex; align-items: center; justify-content: center; gap: 8px; max-width: 100%; margin: 0 auto 17px; padding: 8px 13px; border-radius: 14px; background: rgba(255,255,255,.72); color: #736879; font-size: clamp(12px, 1.15vw, 15px); line-height: 1.25; }
+.ai-source b { white-space: nowrap; }
+.ai-source span { font-weight: 700; }
+.ai-source.ai { background: #e5f7ee; color: #287558; }
+.ai-source.example { background: #fff0d7; color: #9b641b; }
+.ai-source.teacher { background: #eee8fb; color: #6f58a1; }
 .compact-message textarea { width: 100%; min-height: 115px; padding: 12px; resize: none; border: 3px solid rgba(255,255,255,.9); border-radius: 16px; background: rgba(255,255,255,.72); color: var(--ink); font: inherit; font-size: clamp(26px, 3.5vw, 45px); font-weight: 900; text-align: center; }
 .message-actions { display: flex; gap: 8px; }
 .promise-card + .message-actions button { background: #dd6788; }
@@ -309,6 +363,41 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
   .menu-label { align-self: center; font-size: clamp(12px, 3.4vw, 16px); white-space: normal; }
   .menu-arrow { right: 7px; bottom: 4px; font-size: 21px; }
   .start-button { margin-top: 12px; padding: 11px 22px; font-size: 16px; box-shadow: 0 5px 0 #357d68; }
+  .teacher-settings-button { top: 8px; right: 9px; padding: 7px 9px; border-radius: 10px; font-size: 10px; }
+  .settings-shell { gap: 7px; padding: 10px; }
+  .settings-header h1 { font-size: 36px; }
+  .settings-header p { font-size: 10px; }
+  .settings-header span { display: none; }
+  .settings-header > button { padding: 7px 9px; font-size: 11px; }
+  .settings-tabs { gap: 3px; padding: 3px; border-radius: 13px; }
+  .settings-tabs button { min-height: 37px; padding: 4px 2px; border-radius: 10px; font-size: 10px; }
+  .settings-panel { padding: 12px; border-radius: 18px; }
+  .settings-copy { display: block; margin-bottom: 9px; }
+  .settings-copy b { display: block; font-size: 20px; }
+  .settings-copy span { display: block; margin-top: 2px; font-size: 10px; }
+  .location-settings label input, .settings-add input, .settings-card-maker input { padding: 9px 10px; font-size: 12px; }
+  .location-button { margin-top: 8px; padding: 8px 10px; font-size: 11px; }
+  .coordinate-note { margin-top: 7px; padding: 7px 9px; font-size: 9px; }
+  .settings-note { margin-top: 8px; padding: 8px 9px; font-size: 9px; }
+  .settings-helper-list { grid-template-columns: 1fr; max-height: 43svh; }
+  .settings-helper-list > div { grid-template-columns: 24px 1fr repeat(3, 25px); padding: 6px; font-size: 12px; }
+  .settings-helper-list button { width: 24px; height: 24px; }
+  .settings-add { margin-top: 7px; }
+  .settings-add button, .settings-card-maker button { padding: 8px 10px; font-size: 11px; }
+  .settings-card-grid { grid-template-columns: repeat(4, 1fr); max-height: 39svh; gap: 5px; }
+  .settings-card-grid > div { min-height: 59px; padding: 4px 2px; }
+  .settings-card-grid span { font-size: 20px; }
+  .settings-card-grid b { font-size: 9px; }
+  .settings-card-maker { grid-template-columns: 51px 1fr; gap: 5px; margin-top: 7px; }
+  .settings-card-maker button { grid-column: 1 / -1; }
+  .settings-card-maker select { padding: 5px; font-size: 16px; }
+  .api-status-list { gap: 5px; }
+  .api-status-list > div { grid-template-columns: 13px 95px 1fr; gap: 6px; padding: 9px; font-size: 11px; }
+  .api-status-list em { font-size: 9px; }
+  .status-dot { width: 9px; height: 9px; }
+  .settings-footer { gap: 7px; }
+  .settings-footer span { flex: 1; font-size: 9px; text-align: right; }
+  .settings-footer button { padding: 9px 15px; font-size: 12px; box-shadow: 0 3px 0 #2f6c59; }
 
   .page-shell { grid-template-rows: auto minmax(0, 1fr) auto; height: 100svh; min-height: 0; padding: 10px 10px 9px; overflow: hidden; }
   .page-progress { gap: 5px; margin-bottom: 7px; }
@@ -333,20 +422,22 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
   .air-value { margin-top: 0; }
   .air-value b { font-size: 35px; }
   .air-note { margin-top: 7px; font-size: 11px; }
+  .schedule-board { grid-template-columns: 1fr; grid-template-rows: auto auto auto auto; height: auto; gap: 7px; }
   .schedule-toolbar div { display: block; }
   .schedule-toolbar span { display: block; margin-top: 2px; font-size: 11px; }
   .schedule-toolbar { margin-bottom: 6px; }
   .admin-toggle { padding: 6px 8px; font-size: 11px; }
-  .today-schedule { min-height: 95px; padding: 6px 3px; border-radius: 16px; overflow-x: auto; }
-  .schedule-position { flex: 0 0 92px; }
-  .today-card { min-width: 76px; padding: 12px 3px 6px; border-radius: 13px; }
-  .today-order { top: 4px; left: 4px; width: 18px; height: 18px; font-size: 9px; }
+  .today-schedule { grid-column: 1; grid-row: 2; max-height: 43svh; min-height: 180px; padding: 5px 8px; border-radius: 16px; overflow-y: auto; }
+  .schedule-position { flex: 0 0 auto; }
+  .today-card { grid-template-columns: 27px 38px 1fr auto; min-width: 0; min-height: 43px; padding: 4px 6px; border-radius: 12px; }
+  .today-order { width: 19px; height: 19px; font-size: 9px; }
   .today-icon { font-size: 28px; }
-  .today-card strong { font-size: 11px; }
-  .today-actions { top: 2px; right: 2px; }
+  .today-card strong { font-size: 13px; }
   .today-actions button { width: 18px; height: 18px; font-size: 11px; }
-  .schedule-position:not(:last-of-type)::after { right: -10px; width: 20px; height: 20px; font-size: 13px; }
-  .schedule-tray { grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 6px; }
+  .schedule-position:not(:last-of-type)::after { left: 50%; right: auto; bottom: -9px; width: 18px; height: 18px; font-size: 11px; }
+  .card-maker-wrap { grid-column: 1; grid-row: 3; }
+  .schedule-tray, .schedule-board:has(.card-maker-wrap) .schedule-tray { grid-column: 1; grid-row: 3; grid-template-columns: repeat(4, 1fr); gap: 5px; max-height: none; margin-top: 0; overflow: visible; }
+  .schedule-board:has(.card-maker-wrap) .schedule-tray { grid-row: 4; }
   .card-maker { grid-template-columns: 48px 1fr; }
   .card-maker button { grid-column: 1 / -1; }
   .tray-card-main { min-height: 55px; padding: 3px; }
@@ -358,6 +449,7 @@ h1, h2, h3, .helper-name, .message-card p, .date-numbers, .weekday-badge {
   .edit-mini { margin-top: 10px; }
   .helper-name-list { grid-template-columns: repeat(2, 1fr); max-height: 180px; }
   .message-card { padding: 25px 14px; border-radius: 22px; }
+  .ai-source { display: grid; gap: 2px; margin-bottom: 9px; padding: 6px 10px; font-size: 10px; }
   .message-card p, .compact-message p { font-size: 34px; line-height: 1.05; }
   .quote-mark { font-size: 80px; top: -17px; left: 13px; }
   .tiny-tag { margin-top: 15px; padding: 7px 11px; font-size: 11px; }

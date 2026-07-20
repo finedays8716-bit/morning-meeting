@@ -13,20 +13,78 @@ function fallback(kind: string, topic: string, schedule: string) {
   return "친구의 이야기를 잘 듣고 서로 다정하게 말해요.";
 }
 
+function cleanPromise(text: string) {
+  const plain = text
+    .replace(/\*\*|__|`|#+\s*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const quoted = [...plain.matchAll(/[“\"]([^“”\"]{5,120})[”\"]/g)];
+  if (quoted.length > 0) return quoted[quoted.length - 1][1].trim();
+
+  const withoutLabel = plain
+    .replace(/^.*?(?:다음과 같이 제안합니다|다음과 같습니다)\s*[.:：-]?\s*/u, "")
+    .replace(/^(?:오늘의\s*)?(?:안전\s*|생활\s*)?약속\s*[:：-]\s*/u, "")
+    .trim();
+  const sentences = withoutLabel.match(/[^.!?]+[.!?]?/g)?.map((item) => item.trim()).filter(Boolean) || [];
+  const childFriendly = sentences.filter((item) => /(?:요|해요|돼요|않아요|말아요)[.!?]?$/u.test(item));
+  return (childFriendly.at(-1) || sentences.at(-1) || withoutLabel).replace(/^["“]|["”]$/g, "").trim();
+}
+
 export async function POST(request: Request) {
   const { kind, topic = "", schedule = "" } = await request.json();
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return Response.json({ text: fallback(kind, topic, schedule), mode: "example" });
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return Response.json({
+      text: fallback(kind, topic, schedule),
+      mode: "example",
+      message: "Gemini API 키가 연결되지 않아 예시 문장을 보여드려요.",
+    });
+  }
 
   const instruction = kind === "question"
     ? `만 3~5세 유아가 아침모임에서 자유롭게 말할 수 있는 열린 질문 하나를 만드세요. 주제: ${topic}. 한 문장만, 쉽고 따뜻한 한국어로 쓰세요.`
-    : `유치원 오늘의 일과(${schedule || "일상적인 유치원 생활"})를 보고 가장 필요한 안전 또는 생활 약속 하나를 만드세요. 만 3~5세가 이해할 한 문장만, 긍정적인 한국어로 쓰세요.`;
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-5-mini", input: instruction }),
-  });
-  if (!response.ok) return Response.json({ text: fallback(kind, topic, schedule), mode: "example" });
-  const data = await response.json();
-  return Response.json({ text: data.output_text || fallback(kind, topic, schedule), mode: "ai" });
+    : `유치원 오늘의 일과(${schedule || "일상적인 유치원 생활"})를 보고 가장 필요한 안전 또는 생활 약속 하나를 만드세요. 만 3~5세가 바로 이해할 수 있는 35자 안팎의 긍정적인 한국어 한 문장만 쓰세요. 설명, 제목, 인사, 따옴표, 굵은 글씨 표시 없이 약속 문장만 출력하세요.`;
+  const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: instruction }] }],
+        generationConfig: { temperature: 0.9, maxOutputTokens: 120 },
+      }),
+    });
+
+    if (!response.ok) {
+      return Response.json({
+        text: fallback(kind, topic, schedule),
+        mode: "example",
+        message: "Gemini 호출에 실패해 예시 문장을 보여드려요. API 키와 무료 사용량을 확인해주세요.",
+      });
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts
+      ?.map((part: { text?: string }) => part.text || "")
+      .join("")
+      .trim();
+
+    if (!text) {
+      return Response.json({
+        text: fallback(kind, topic, schedule),
+        mode: "example",
+        message: "Gemini가 문장을 만들지 못해 예시 문장을 보여드려요. 다시 시도해주세요.",
+      });
+    }
+
+    return Response.json({ text: kind === "promise" ? cleanPromise(text) : text, mode: "ai", message: "Gemini AI가 새로 만든 문장이에요." });
+  } catch {
+    return Response.json({
+      text: fallback(kind, topic, schedule),
+      mode: "example",
+      message: "Gemini에 연결하지 못해 예시 문장을 보여드려요. 잠시 후 다시 시도해주세요.",
+    });
+  }
 }

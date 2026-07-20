@@ -10,6 +10,20 @@ type PageInfo = {
   light: string;
 };
 
+type LocationSettings = {
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+  source: "manual" | "device";
+};
+
+type ApiStatus = {
+  geminiKeyConfigured: boolean;
+  publicDataKeyConfigured: boolean;
+  weatherLive: boolean;
+  airLive: boolean;
+};
+
 const pages: PageInfo[] = [
   { title: "오늘은 몇 월 며칠일까요?", shortTitle: "날짜와 요일", spritePosition: "0% 0%", color: "#ff8f70", light: "#fff0e9" },
   { title: "오늘 날씨는 어때요?", shortTitle: "날씨와 미세먼지", spritePosition: "50% 0%", color: "#4fa9e8", light: "#eaf6ff" },
@@ -40,10 +54,22 @@ function DatePage() {
 }
 
 function WeatherPage() {
+  const [locationName, setLocationName] = useState("지역 미설정");
   const airQuality = [
     getAirQuality("PM10", 28),
     getAirQuality("PM2.5", 12),
   ];
+
+  useEffect(() => {
+    const saved = localStorage.getItem("morning-location-settings");
+    if (!saved) return;
+    try {
+      const location: LocationSettings = JSON.parse(saved);
+      if (location.name) setLocationName(location.name);
+    } catch {
+      // 저장값이 손상되면 기본 안내를 유지해요.
+    }
+  }, []);
 
   return (
     <div className="weather-grid">
@@ -51,6 +77,7 @@ function WeatherPage() {
         <div className="big-weather">☀️</div>
         <div>
           <p className="eyebrow">오늘의 날씨</p>
+          <span className="weather-location">📍 {locationName}</span>
           <h3>맑아요</h3>
           <p className="temperature">24℃</p>
         </div>
@@ -100,22 +127,172 @@ function getAirQuality(type: "PM10" | "PM2.5", value: number) {
 
 type ScheduleCard = { id: string; label: string; icon: string };
 
+function cleanPromiseForDisplay(text: string) {
+  const plain = String(text || "").replace(/\*\*|__|`/g, "").replace(/\s+/g, " ").trim();
+  const quoted = [...plain.matchAll(/[“\"]([^“”\"]{5,120})[”\"]/g)];
+  if (quoted.length > 0) return quoted[quoted.length - 1][1].trim();
+  return plain
+    .replace(/^.*?(?:다음과 같이 제안합니다|다음과 같습니다)\s*[.:：-]?\s*/u, "")
+    .replace(/^(?:오늘의\s*)?(?:안전\s*|생활\s*)?약속\s*[:：-]\s*/u, "")
+    .replace(/^["“]|["”]$/g, "")
+    .trim();
+}
+
 const starterScheduleCards: ScheduleCard[] = [
+  { id: "arrival", label: "등원", icon: "🎒" },
   { id: "free-play", label: "자유놀이", icon: "🧸" },
-  { id: "talk", label: "이야기 나누기", icon: "💬" },
+  { id: "morning-snack", label: "오전간식", icon: "🥛" },
+  { id: "afternoon-snack", label: "오후간식", icon: "🍎" },
+  { id: "special", label: "특성화활동", icon: "✨" },
+  { id: "home", label: "귀가", icon: "🏠" },
+  { id: "field-trip", label: "현장학습", icon: "🚌" },
+  { id: "drill", label: "대피훈련", icon: "🚨" },
+  { id: "talk", label: "이야기나누기", icon: "💬" },
+  { id: "story", label: "동화", icon: "📚" },
   { id: "outside", label: "바깥놀이", icon: "🌳" },
   { id: "art", label: "미술놀이", icon: "🎨" },
   { id: "music", label: "음악놀이", icon: "🎵" },
   { id: "lunch", label: "점심", icon: "🍚" },
   { id: "rest", label: "휴식", icon: "🌙" },
-  { id: "home", label: "귀가", icon: "🏠" },
 ];
 
-const cardIcons = ["🧸", "💬", "🌳", "🎨", "🎵", "🍚", "🌙", "🏠", "📚", "🧩", "🏃", "🧼", "🎂", "🚌", "🌱", "⭐"];
+const cardIcons = ["🎒", "🧸", "🥛", "🍎", "✨", "🏠", "🚌", "🚨", "💬", "📚", "🌳", "🎨", "🎵", "🍚", "🌙", "🧩", "🏃", "🧼", "🎂", "🌱", "⭐"];
+
+function TeacherSettings({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<"location" | "helpers" | "schedule" | "api">("location");
+  const [location, setLocation] = useState<LocationSettings>({ name: "", latitude: null, longitude: null, source: "manual" });
+  const [names, setNames] = useState<string[]>(["새싹이", "꽃잎이", "햇살이"]);
+  const [nameDraft, setNameDraft] = useState("");
+  const [cards, setCards] = useState<ScheduleCard[]>(starterScheduleCards);
+  const [cardDraft, setCardDraft] = useState("");
+  const [cardIcon, setCardIcon] = useState("⭐");
+  const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
+  const [notice, setNotice] = useState("");
+  const [locating, setLocating] = useState(false);
+
+  useEffect(() => {
+    const savedLocation = localStorage.getItem("morning-location-settings");
+    const savedNames = localStorage.getItem("morning-helper-names");
+    const savedCards = localStorage.getItem("morning-schedule-cards");
+    try { if (savedLocation) setLocation(JSON.parse(savedLocation)); } catch { /* 기본값 유지 */ }
+    try { if (savedNames) setNames(JSON.parse(savedNames)); } catch { /* 기본값 유지 */ }
+    try {
+      if (savedCards) {
+        const previous: ScheduleCard[] = JSON.parse(savedCards);
+        const previousIds = new Set(previous.map((card) => card.id));
+        setCards([...starterScheduleCards.filter((card) => !previousIds.has(card.id)), ...previous]);
+      }
+    } catch { /* 기본값 유지 */ }
+    fetch("/api/status").then((response) => response.json()).then(setApiStatus).catch(() => setApiStatus(null));
+  }, []);
+
+  const saveAll = () => {
+    localStorage.setItem("morning-location-settings", JSON.stringify(location));
+    localStorage.setItem("morning-helper-names", JSON.stringify(names));
+    localStorage.setItem("morning-schedule-cards", JSON.stringify(cards));
+    setNotice("이 기기에 저장했어요 ✓");
+    window.setTimeout(() => setNotice(""), 1800);
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setNotice("이 기기는 위치 찾기를 지원하지 않아요.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocation({ name: location.name || "현재 위치", latitude: Number(coords.latitude.toFixed(6)), longitude: Number(coords.longitude.toFixed(6)), source: "device" });
+        setLocating(false);
+        setNotice("현재 위치를 가져왔어요. 저장을 눌러주세요.");
+      },
+      () => {
+        setLocating(false);
+        setNotice("위치 권한을 허용하지 않았어요. 지역명을 직접 입력해도 돼요.");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 },
+    );
+  };
+
+  const addName = () => {
+    const name = nameDraft.trim();
+    if (!name) return;
+    setNames((current) => [...current, name]);
+    setNameDraft("");
+  };
+  const moveName = (index: number, direction: -1 | 1) => {
+    setNames((current) => {
+      const next = [...current];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return current;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+  const addCard = () => {
+    const label = cardDraft.trim();
+    if (!label) return;
+    setCards((current) => [...current, { id: `custom-${Date.now()}`, label, icon: cardIcon }]);
+    setCardDraft("");
+  };
+
+  return (
+    <main className="app-shell settings-shell">
+      <header className="settings-header">
+        <div><p>교사용</p><h1>교사 설정</h1><span>우리 반 정보를 한곳에서 관리해요</span></div>
+        <button onClick={onClose}>✕ 닫기</button>
+      </header>
+
+      <nav className="settings-tabs" aria-label="교사 설정 항목">
+        <button className={tab === "location" ? "active" : ""} onClick={() => setTab("location")}>📍 지역</button>
+        <button className={tab === "helpers" ? "active" : ""} onClick={() => setTab("helpers")}>🌱 도우미</button>
+        <button className={tab === "schedule" ? "active" : ""} onClick={() => setTab("schedule")}>🗂 일과 카드</button>
+        <button className={tab === "api" ? "active" : ""} onClick={() => setTab("api")}>🔌 API 상태</button>
+      </nav>
+
+      <section className="settings-panel">
+        {tab === "location" && <div className="settings-section location-settings">
+          <div className="settings-copy"><b>유치원 지역</b><span>날씨를 불러올 기준 지역을 한 번 저장해요.</span></div>
+          <label>지역명<input value={location.name} onChange={(event) => setLocation({ ...location, name: event.target.value, source: "manual" })} placeholder="예: 서울특별시 종로구" /></label>
+          <button className="location-button" onClick={useCurrentLocation} disabled={locating}>{locating ? "위치를 찾는 중…" : "◎ 현재 위치 가져오기"}</button>
+          {location.latitude !== null && <div className="coordinate-note"><b>위치 좌표 저장 준비됨</b><span>{location.latitude}, {location.longitude}</span></div>}
+          <p className="settings-note">지역명과 좌표는 이 기기에만 저장돼요. 현재 날씨 화면은 아직 예시 데이터이며, 실제 공공데이터 API는 다음 단계에서 연결해요.</p>
+        </div>}
+
+        {tab === "helpers" && <div className="settings-section">
+          <div className="settings-copy"><b>도우미 순서</b><span>위에서부터 저장한 순서대로 매일 한 명씩 바뀌어요.</span></div>
+          <div className="settings-helper-list">
+            {names.map((name, index) => <div key={`${name}-${index}`}><span>{index + 1}</span><b>{name}</b><button onClick={() => moveName(index, -1)} aria-label={`${name} 위로`}>↑</button><button onClick={() => moveName(index, 1)} aria-label={`${name} 아래로`}>↓</button><button className="remove" onClick={() => setNames(names.filter((_, itemIndex) => itemIndex !== index))} aria-label={`${name} 삭제`}>×</button></div>)}
+          </div>
+          <div className="settings-add"><input value={nameDraft} onChange={(event) => setNameDraft(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addName()} placeholder="친구 이름" /><button onClick={addName}>추가</button></div>
+        </div>}
+
+        {tab === "schedule" && <div className="settings-section">
+          <div className="settings-copy"><b>일과 카드 모음</b><span>기본 카드는 유지되고, 우리 반 카드도 추가할 수 있어요.</span></div>
+          <div className="settings-card-grid">{cards.map((card) => <div key={card.id}><span>{card.icon}</span><b>{card.label}</b>{card.id.startsWith("custom-") && <button onClick={() => setCards(cards.filter((item) => item.id !== card.id))} aria-label={`${card.label} 삭제`}>×</button>}</div>)}</div>
+          <div className="settings-card-maker"><select value={cardIcon} onChange={(event) => setCardIcon(event.target.value)} aria-label="일과 카드 그림">{cardIcons.map((icon) => <option key={icon}>{icon}</option>)}</select><input value={cardDraft} onChange={(event) => setCardDraft(event.target.value)} onKeyDown={(event) => event.key === "Enter" && addCard()} placeholder="새 일과 이름" /><button onClick={addCard}>카드 추가</button></div>
+        </div>}
+
+        {tab === "api" && <div className="settings-section api-settings">
+          <div className="settings-copy"><b>API 연결 상태</b><span>비밀키 내용은 화면에 표시하지 않아요.</span></div>
+          <div className="api-status-list">
+            <div><span className={apiStatus?.geminiKeyConfigured ? "status-dot ready" : "status-dot"} /><b>Gemini AI</b><em>{apiStatus?.geminiKeyConfigured ? "키 설정됨" : "키 없음 · 예시 문장 사용 중"}</em></div>
+            <div><span className={apiStatus?.weatherLive ? "status-dot ready" : "status-dot pending"} /><b>날씨</b><em>아직 미연결 · 예시 데이터</em></div>
+            <div><span className={apiStatus?.airLive ? "status-dot ready" : "status-dot pending"} /><b>미세먼지</b><em>아직 미연결 · 예시 데이터</em></div>
+            <div><span className={apiStatus?.publicDataKeyConfigured ? "status-dot ready" : "status-dot"} /><b>공공데이터 키</b><em>{apiStatus?.publicDataKeyConfigured ? "키 설정됨" : "키 없음"}</em></div>
+          </div>
+          <p className="settings-note">API 키는 이 화면에 입력하지 않고, 버셀의 Environment Variables에 넣어야 안전해요.</p>
+        </div>}
+      </section>
+
+      <footer className="settings-footer"><span>{notice || "변경한 뒤 저장을 눌러주세요"}</span><button onClick={saveAll}>설정 저장</button></footer>
+    </main>
+  );
+}
 
 function SchedulePage() {
   const [cards, setCards] = useState<ScheduleCard[]>(starterScheduleCards);
-  const [todayIds, setTodayIds] = useState<string[]>(["free-play", "talk", "outside", "lunch"]);
+  const [todayIds, setTodayIds] = useState<string[]>(["arrival", "free-play", "morning-snack", "talk", "story", "home"]);
   const [adminMode, setAdminMode] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newIcon, setNewIcon] = useState("⭐");
@@ -124,7 +301,11 @@ function SchedulePage() {
   useEffect(() => {
     const savedCards = localStorage.getItem("morning-schedule-cards");
     const savedToday = localStorage.getItem("morning-schedule-today");
-    if (savedCards) setCards(JSON.parse(savedCards));
+    if (savedCards) {
+      const previous: ScheduleCard[] = JSON.parse(savedCards);
+      const previousIds = new Set(previous.map((card) => card.id));
+      setCards([...starterScheduleCards.filter((card) => !previousIds.has(card.id)), ...previous]);
+    }
     if (savedToday) setTodayIds(JSON.parse(savedToday));
   }, []);
 
@@ -263,6 +444,8 @@ function HelperPage() {
 function QuestionPage() {
   const [topic, setTopic] = useState("오늘의 날씨");
   const [question, setQuestion] = useState("오늘 하늘을 보니 어떤 생각이 드나요?");
+  const [source, setSource] = useState<"initial" | "ai" | "example" | "teacher">("initial");
+  const [sourceMessage, setSourceMessage] = useState("질문 만들기를 누르면 Gemini가 새 질문을 만들어요.");
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const generate = async () => {
@@ -271,14 +454,20 @@ function QuestionPage() {
       const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "question", topic }) });
       const data = await response.json();
       setQuestion(data.text);
+      setSource(data.mode === "ai" ? "ai" : "example");
+      setSourceMessage(data.message || (data.mode === "ai" ? "Gemini AI가 새로 만든 문장이에요." : "API 연결이 필요해 예시 문장을 보여드려요."));
+    } catch {
+      setSource("example");
+      setSourceMessage("AI 연결을 확인해주세요. 현재 문장은 그대로 유지했어요.");
     } finally { setLoading(false); }
   };
   return (
     <div className="ai-page">
       <div className="ai-controls"><input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="질문 주제 입력" /><button onClick={generate} disabled={loading}>{loading ? "생각 중…" : "질문 만들기"}</button></div>
       <div className="message-card question-card compact-message">
+        <div className={`ai-source ${source}`}><b>{source === "ai" ? "✨ Gemini AI 생성" : source === "teacher" ? "✎ 교사가 수정한 문장" : source === "example" ? "⚠ 예시 문장 · API 연결 확인" : "준비된 예시 문장"}</b><span>{sourceMessage}</span></div>
         <span className="quote-mark">“</span>
-        {editing ? <textarea value={question} onChange={(event) => setQuestion(event.target.value)} /> : <p>{question}</p>}
+        {editing ? <textarea value={question} onChange={(event) => { setQuestion(event.target.value); setSource("teacher"); setSourceMessage("교사가 직접 다듬은 문장이에요."); }} /> : <p>{question}</p>}
         <span className="tiny-tag">정답은 없어요. 자유롭게 이야기해요!</span>
       </div>
       <div className="message-actions"><button onClick={generate}>↻ 다시 생성</button><button onClick={() => setEditing((value) => !value)}>{editing ? "✓ 수정 완료" : "✎ 직접 수정"}</button></div>
@@ -288,6 +477,8 @@ function QuestionPage() {
 
 function PromisePage() {
   const [promise, setPromise] = useState("이동할 때는 앞을 잘 살펴요.");
+  const [source, setSource] = useState<"initial" | "ai" | "example" | "teacher">("initial");
+  const [sourceMessage, setSourceMessage] = useState("버튼을 누르면 오늘의 일과를 보고 Gemini가 약속을 만들어요.");
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const generate = async () => {
@@ -298,14 +489,20 @@ function PromisePage() {
     try {
       const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "promise", schedule }) });
       const data = await response.json();
-      setPromise(data.text);
+      setPromise(cleanPromiseForDisplay(data.text));
+      setSource(data.mode === "ai" ? "ai" : "example");
+      setSourceMessage(data.message || (data.mode === "ai" ? "Gemini AI가 새로 만든 문장이에요." : "API 연결이 필요해 예시 문장을 보여드려요."));
+    } catch {
+      setSource("example");
+      setSourceMessage("AI 연결을 확인해주세요. 현재 문장은 그대로 유지했어요.");
     } finally { setLoading(false); }
   };
   return (
     <div className="ai-page">
       <div className="message-card promise-card compact-message">
+        <div className={`ai-source ${source}`}><b>{source === "ai" ? "✨ Gemini AI 생성" : source === "teacher" ? "✎ 교사가 수정한 문장" : source === "example" ? "⚠ 예시 문장 · API 연결 확인" : "준비된 예시 문장"}</b><span>{sourceMessage}</span></div>
         <div className="promise-icon">🤝</div>
-        {editing ? <textarea value={promise} onChange={(event) => setPromise(event.target.value)} /> : <p>{promise}</p>}
+        {editing ? <textarea value={promise} onChange={(event) => { setPromise(event.target.value); setSource("teacher"); setSourceMessage("교사가 직접 다듬은 문장이에요."); }} /> : <p>{promise}</p>}
         <span className="tiny-tag">오늘의 일과에 어울리는 약속이에요</span>
       </div>
       <div className="message-actions"><button onClick={generate} disabled={loading}>{loading ? "생각 중…" : "↻ 약속 생성·다시 생성"}</button><button onClick={() => setEditing((value) => !value)}>{editing ? "✓ 수정 완료" : "✎ 직접 수정"}</button></div>
@@ -341,9 +538,12 @@ export default function Home() {
     window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
   };
 
+  if (currentPage === -1) return <TeacherSettings onClose={() => go(0)} />;
+
   if (currentPage === 0) {
     return (
       <main className="app-shell home-shell">
+        <button className="teacher-settings-button" onClick={() => go(-1)}>⚙ 교사 설정</button>
         <div className="decor decor-one" />
         <div className="decor decor-two" />
         <header className="home-header">
