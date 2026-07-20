@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 // 에어코리아(한국환경공단) 실시간 측정정보 조회 API 프록시
+// station은 쿼리 파라미터로 넘어오면 그 값을, 없으면 환경변수 기본값을 씁니다.
 
 const GRADE_LABEL: Record<string, string> = {
   "1": "좋음",
@@ -9,9 +10,10 @@ const GRADE_LABEL: Record<string, string> = {
   "4": "매우나쁨",
 };
 
-export async function GET() {
+export async function GET(req: Request) {
   const serviceKey = process.env.PUBLIC_DATA_AIR_KEY;
-  const stationName = process.env.AIR_STATION_NAME || "구월동";
+  const { searchParams } = new URL(req.url);
+  const stationName = searchParams.get("station") || process.env.AIR_STATION_NAME || "구월동";
 
   if (!serviceKey) {
     return NextResponse.json(

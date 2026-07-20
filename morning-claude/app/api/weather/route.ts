@@ -3,24 +3,22 @@ import { NextResponse } from "next/server";
 // 기상청 단기예보(동네예보) 조회 API를 서버에서 대신 호출하는 라우트입니다.
 // 브라우저에서 직접 호출하면 서비스키가 노출되고, 공공데이터포털 API 특성상
 // CORS가 막혀있는 경우가 많아 반드시 서버를 거쳐야 합니다.
+// nx, ny는 쿼리 파라미터로 넘어오면 그 값을, 없으면 환경변수 기본값을 씁니다.
 
 const BASE_TIMES = ["0200", "0500", "0800", "1100", "1400", "1700", "2000", "2300"];
 
 function getBaseDateTime() {
   const now = new Date();
-  // 한국 표준시 기준으로 계산 (서버가 UTC일 수 있으므로 9시간 보정)
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000 - now.getTimezoneOffset() * 60 * 1000);
   let hour = kst.getUTCHours();
   let baseDate = kst.toISOString().slice(0, 10).replace(/-/g, "");
 
-  // 발표시각 이후 10분 정도 지나야 값이 들어오므로 여유를 둠
   let candidate = "0200";
   for (const t of BASE_TIMES) {
     if (hour * 100 + kst.getUTCMinutes() - 10 >= parseInt(t)) {
       candidate = t;
     }
   }
-  // 자정 직후라 오늘 발표분이 아직 없으면 전날 23시 발표 사용
   if (hour < 2) {
     const yesterday = new Date(kst.getTime() - 24 * 60 * 60 * 1000);
     baseDate = yesterday.toISOString().slice(0, 10).replace(/-/g, "");
@@ -30,10 +28,11 @@ function getBaseDateTime() {
   return { baseDate, baseTime: candidate };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const serviceKey = process.env.PUBLIC_DATA_WEATHER_KEY;
-  const nx = process.env.WEATHER_NX || "54";
-  const ny = process.env.WEATHER_NY || "124";
+  const { searchParams } = new URL(req.url);
+  const nx = searchParams.get("nx") || process.env.WEATHER_NX || "54";
+  const ny = searchParams.get("ny") || process.env.WEATHER_NY || "124";
 
   if (!serviceKey) {
     return NextResponse.json(
@@ -59,7 +58,6 @@ export async function GET() {
       return NextResponse.json({ error: "예보 데이터를 찾을 수 없습니다.", raw: data }, { status: 502 });
     }
 
-    // 지금 시각과 가장 가까운 미래 예보 시간을 하나 골라 SKY/TMP/POP 추출
     const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const nowHHMM = `${String(nowKst.getUTCHours()).padStart(2, "0")}00`;
 
@@ -69,8 +67,8 @@ export async function GET() {
     const pick = (category: string) =>
       items.find((i: any) => i.category === category && i.fcstTime === targetTime)?.fcstValue;
 
-    const skyCode = pick("SKY"); // 1=맑음, 3=구름많음, 4=흐림
-    const ptyCode = pick("PTY"); // 0=없음, 1=비, 2=비/눈, 3=눈, 4=소나기
+    const skyCode = pick("SKY");
+    const ptyCode = pick("PTY");
     const tmp = pick("TMP");
     const pop = pick("POP");
 

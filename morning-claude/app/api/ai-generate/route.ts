@@ -1,18 +1,31 @@
 import { NextResponse } from "next/server";
 
-// 그날 일과(활동 목록)를 바탕으로 만 3세 대상 '랜덤질문' 또는 '안전약속'을
-// Google Gemini API로 생성하는 라우트. 키는 서버에만 존재하고 브라우저에는
-// 절대 노출되지 않습니다.
+// 그날 일과(활동 목록) 또는 교사가 입력한 주제어를 바탕으로
+// 만 3세 대상 '랜덤질문' 또는 '안전약속'을 Google Gemini API로 생성합니다.
+// 키는 서버에만 존재하고 브라우저에는 절대 노출되지 않습니다.
 
 type RequestBody = {
   type: "question" | "safety";
   activities: string[];
+  keyword?: string;
 };
 
-function buildPrompt(type: string, activities: string[]) {
+function buildPrompt(type: string, activities: string[], keyword?: string) {
   const activityText = activities.length > 0 ? activities.join(", ") : "특별한 일과 없음";
+  const trimmedKeyword = keyword?.trim();
 
   if (type === "question") {
+    // 주제어가 있으면 주제어 중심, 없으면 일과 중심
+    if (trimmedKeyword) {
+      return (
+        `너는 만 3세 유치원 아침모임을 돕는 보조교사야. ` +
+        `오늘 아이들과 이야기 나눌 주제는 "${trimmedKeyword}"이야. ` +
+        `이 주제와 관련지어, 만 3세 아이들이 쉽게 이해하고 대답할 수 있는 ` +
+        `짧고 다정한 '오늘의 질문' 1개만 만들어줘. ` +
+        `조건: 한 문장, 존댓말, 어려운 단어 금지, 예/아니오보다는 자유롭게 말할 수 있는 열린 질문. ` +
+        `질문 문장만 출력하고 다른 설명은 절대 붙이지 마.`
+      );
+    }
     return (
       `너는 만 3세 유치원 아침모임을 돕는 보조교사야. ` +
       `오늘의 일과는 [${activityText}]야. ` +
@@ -23,6 +36,7 @@ function buildPrompt(type: string, activities: string[]) {
     );
   }
 
+  // 안전약속은 원래대로 일과 기반
   return (
     `너는 만 3세 유치원 아침모임을 돕는 보조교사야. ` +
     `오늘의 일과는 [${activityText}]야. ` +
@@ -49,8 +63,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "요청 형식이 올바르지 않습니다." }, { status: 400 });
   }
 
-  const prompt = buildPrompt(body.type, body.activities || []);
-  const model = "gemini-2.5-flash-lite";
+  const prompt = buildPrompt(body.type, body.activities || [], body.keyword);
+  const model = "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   try {

@@ -41,6 +41,7 @@ export default function Home() {
   const [customInput, setCustomInput] = useState("");
 
   const [question, setQuestion] = useState("");
+  const [questionKeyword, setQuestionKeyword] = useState("");
   const [safetyPromise, setSafetyPromise] = useState("");
   const [loadingQuestion, setLoadingQuestion] = useState(false);
   const [loadingSafety, setLoadingSafety] = useState(false);
@@ -53,13 +54,38 @@ export default function Home() {
 
   const HELPER_STORAGE_KEY = "morning-meeting-helper-state";
 
+  // 위치 설정 (이 브라우저에만 저장됨)
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [locNx, setLocNx] = useState("");
+  const [locNy, setLocNy] = useState("");
+  const [locStation, setLocStation] = useState("");
+
+  const LOCATION_STORAGE_KEY = "morning-meeting-location";
+
   useEffect(() => {
-    fetch("/api/weather")
+    // 저장된 위치 설정 먼저 읽고 그 값으로 API 호출
+    let savedLoc = { nx: "", ny: "", station: "" };
+    try {
+      const raw = window.localStorage.getItem(LOCATION_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        savedLoc = { nx: parsed.nx || "", ny: parsed.ny || "", station: parsed.station || "" };
+        setLocNx(savedLoc.nx);
+        setLocNy(savedLoc.ny);
+        setLocStation(savedLoc.station);
+      }
+    } catch {}
+
+    const weatherQuery =
+      savedLoc.nx && savedLoc.ny ? `?nx=${encodeURIComponent(savedLoc.nx)}&ny=${encodeURIComponent(savedLoc.ny)}` : "";
+    const dustQuery = savedLoc.station ? `?station=${encodeURIComponent(savedLoc.station)}` : "";
+
+    fetch(`/api/weather${weatherQuery}`)
       .then((r) => r.json())
       .then(setWeather)
       .catch(() => setWeather({ error: "날씨 정보를 불러오지 못했어요." }));
 
-    fetch("/api/dust")
+    fetch(`/api/dust${dustQuery}`)
       .then((r) => r.json())
       .then(setDust)
       .catch(() => setDust({ error: "미세먼지 정보를 불러오지 못했어요." }));
@@ -76,6 +102,31 @@ export default function Home() {
     }
     setHelperReady(true);
   }, []);
+
+  const saveLocation = () => {
+    const loc = { nx: locNx.trim(), ny: locNy.trim(), station: locStation.trim() };
+    try {
+      window.localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(loc));
+    } catch {}
+
+    // 저장 즉시 재조회
+    setWeather(null);
+    setDust(null);
+    const weatherQuery = loc.nx && loc.ny ? `?nx=${encodeURIComponent(loc.nx)}&ny=${encodeURIComponent(loc.ny)}` : "";
+    const dustQuery = loc.station ? `?station=${encodeURIComponent(loc.station)}` : "";
+
+    fetch(`/api/weather${weatherQuery}`)
+      .then((r) => r.json())
+      .then(setWeather)
+      .catch(() => setWeather({ error: "날씨 정보를 불러오지 못했어요." }));
+
+    fetch(`/api/dust${dustQuery}`)
+      .then((r) => r.json())
+      .then(setDust)
+      .catch(() => setDust({ error: "미세먼지 정보를 불러오지 못했어요." }));
+
+    setLocationOpen(false);
+  };
 
   const saveHelperState = (next: HelperState) => {
     setHelper(next);
@@ -115,7 +166,11 @@ export default function Home() {
       const res = await fetch("/api/ai-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, activities: schedule }),
+        body: JSON.stringify({
+          type,
+          activities: schedule,
+          keyword: type === "question" ? questionKeyword : undefined,
+        }),
       });
       const data = await res.json();
       setResult(data.text || data.error || "생성에 실패했어요.");
@@ -154,7 +209,70 @@ export default function Home() {
           <h1 className="font-display">안녕, 오늘 아침이에요!</h1>
           <p>오늘 날씨를 살펴보고, 하루 일과를 함께 만들어봐요.</p>
         </div>
+        <button
+          className="settings-btn"
+          onClick={() => setLocationOpen((v) => !v)}
+          aria-label="우리 반 위치 설정"
+        >
+          ⚙ 설정
+        </button>
       </div>
+
+      {locationOpen && (
+        <div className="section card">
+          <h2 className="font-display">우리 반 위치 설정</h2>
+          <p className="info-label" style={{ marginBottom: 14 }}>
+            이 화면(기기)에만 저장돼요. 비워두면 인천 기본값을 사용해요.
+          </p>
+          <div className="location-grid">
+            <div>
+              <label className="location-label">기상청 격자좌표 NX</label>
+              <input
+                className="text-input"
+                type="text"
+                inputMode="numeric"
+                placeholder="예: 54"
+                value={locNx}
+                onChange={(e) => setLocNx(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="location-label">기상청 격자좌표 NY</label>
+              <input
+                className="text-input"
+                type="text"
+                inputMode="numeric"
+                placeholder="예: 124"
+                value={locNy}
+                onChange={(e) => setLocNy(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="location-label">에어코리아 측정소명</label>
+              <input
+                className="text-input"
+                type="text"
+                placeholder="예: 구월동"
+                value={locStation}
+                onChange={(e) => setLocStation(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="location-help">
+            <a href="https://www.data.go.kr/data/15084084/openapi.do" target="_blank" rel="noreferrer">
+              📍 기상청 격자좌표 찾기 (참고파일 다운로드)
+            </a>
+            <a href="https://www.airkorea.or.kr/web/stationInfo" target="_blank" rel="noreferrer">
+              📍 에어코리아 측정소 찾기
+            </a>
+          </div>
+
+          <button className="add-btn" style={{ marginTop: 14 }} onClick={saveLocation}>
+            저장하고 다시 불러오기
+          </button>
+        </div>
+      )}
 
       <div className="section info-row">
         <div className="card info-card">
@@ -286,6 +404,12 @@ export default function Home() {
             <span className="font-display">오늘의 질문</span>
             <span className="badge question">Q</span>
           </h2>
+          <input
+            className="text-input keyword-input"
+            placeholder="주제어를 입력해요 (비워두면 오늘 일과 기반)"
+            value={questionKeyword}
+            onChange={(e) => setQuestionKeyword(e.target.value)}
+          />
           <button
             className="generate-btn question"
             onClick={() => generate("question")}
